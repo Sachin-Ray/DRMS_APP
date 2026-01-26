@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 
 class BeneficiaryDetails {
   String? name;
@@ -7,45 +8,57 @@ class BeneficiaryDetails {
   int? blockCode;
   String? village;
 
-  BeneficiaryDetails({
-    this.name,
-    this.ageCategory,
-    this.gender,
-    this.blockCode,
-    this.village,
-  });
-
   Map<String, dynamic> toJson() => {
-        "name": name,
-        "ageCategory": ageCategory,
-        "gender": gender,
-        "blockCode": blockCode,
-        "village": village,
-      };
+    "name": name,
+    "ageCategory": ageCategory,
+    "gender": gender,
+    "blockCode": blockCode,
+    "village": village,
+  };
 }
 
 class AssistanceDetails {
+  int? normCode;
   String? assistanceType;
-  double? amount;
+
+  // Agriculture specific
+  String? landHolding;
+
+  double? baseAmount;
+  int victimCount = 1;
+
+  // Live amount notifier
+  ValueNotifier<double> amountNotifier = ValueNotifier(0);
+
+  // Victim names list
+  List<String> victimNames = [];
+
+  String? remarks;
 
   Map<String, dynamic> toJson() => {
-        "assistanceType": assistanceType,
-        "amount": amount,
-      };
+    "normCode": normCode,
+    "assistanceType": assistanceType,
+    "landHolding": landHolding,
+    "victimCount": victimCount,
+    "amount": amountNotifier.value,
+    "victimNames": victimNames,
+    "remarks": remarks,
+  };
 }
 
 class BankDetails {
-  String? accountHolder;
-  String? accountNumber;
   String? ifsc;
   String? bankName;
+  String? branchName;
+  String? accountNumber;
+  String? confirmAccountNumber;
 
   Map<String, dynamic> toJson() => {
-        "accountHolder": accountHolder,
-        "accountNumber": accountNumber,
-        "ifsc": ifsc,
-        "bankName": bankName,
-      };
+    "ifsc": ifsc,
+    "bankName": bankName,
+    "branchName": branchName,
+    "accountNumber": accountNumber,
+  };
 }
 
 class BeneficiaryDocuments {

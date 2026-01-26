@@ -1,9 +1,8 @@
+import 'package:drms/ReportIncidentScreen_Widgets/add_agriculture_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/add_beneficiary_dialog.dart';
+import 'package:drms/ReportIncidentScreen_Widgets/add_handloom_beneficiary_dialog.dart';
 import 'package:drms/app_scaffold.dart';
-import 'package:drms/model/Block.dart';
-import 'package:drms/model/Village.dart';
 import 'package:drms/services/APIService.dart';
-import 'package:drms/services/session.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -45,8 +44,6 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
     _loadHighlightedDates();
   }
 
-  /* ---------------- API ---------------- */
-
   Future<void> _loadHighlightedDates() async {
     try {
       final dates = await APIService.instance.getFirDatesByBlockCode();
@@ -78,8 +75,6 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
     if (mounted) setState(() => isLoadingPRs = false);
   }
 
-  /* ---------------- UI ---------------- */
-
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
@@ -95,7 +90,7 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
               child: _incidentDetailsCard(),
             ),
 
-            /// 🔥 HIDDEN → SHOWN ONLY AFTER PR SELECT
+            /// HIDDEN -> SHOWN ONLY AFTER PR SELECT
             if (showBeneficiarySection)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -106,8 +101,6 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
       ),
     );
   }
-
-  /* ---------------- TOP BANNER ---------------- */
 
   Widget _topInfoBanner() {
     return Container(
@@ -131,8 +124,6 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
       ),
     );
   }
-
-  /* ---------------- INCIDENT DETAILS ---------------- */
 
   Widget _incidentDetailsCard() {
     return Material(
@@ -235,7 +226,7 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            mainAxisSize: MainAxisSize.min, // 🔑 IMPORTANT
+            mainAxisSize: MainAxisSize.min, // IMPORTANT
             children: [
               const Text(
                 "Select Date of Incidence",
@@ -244,7 +235,7 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
               const SizedBox(height: 12),
 
               SizedBox(
-                height: 340, // ✅ CONTROLLED HEIGHT
+                height: 340, // CONTROLLED HEIGHT
                 child: TableCalendar(
                   firstDay: DateTime(2020),
                   lastDay: DateTime(2035),
@@ -296,7 +287,6 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
                       border: Border.all(color: primaryBlue),
                       shape: BoxShape.circle,
                     ),
-                    
                   ),
 
                   headerStyle: const HeaderStyle(
@@ -393,22 +383,42 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
   // }
 
   void _openBeneficiaryModal() {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) {
-      return AddBeneficiaryDialog(
-        blocks: [],
-        villages: [],
-        onSave: (payload) {
-          print("FINAL BENEFICIARY PAYLOAD:");
-          print(payload);
-        },
-      );
-    },
-  );
-}
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        if (widget.categoryTitle == "Handloom & Handicrafts") {
+          return AddHandloomBeneficiaryDialog(
+            blocks: [],
+            villages: [],
+            onSave: (payload) {
+              print("HANDLOOM PAYLOAD:");
+              print(payload);
+            },
+          );
+        }
 
+        if (widget.categoryTitle == "Agriculture & Horticulture Loss") {
+          return AddAgricultureBeneficiaryDialog(
+            blocks: [],
+            villages: [],
+            onSave: (payload) {
+              print(payload);
+            },
+          );
+        }
+
+        return AddBeneficiaryDialog(
+          blocks: [],
+          villages: [],
+          onSave: (payload) {
+            print("GRATUITOUS RELIEF PAYLOAD:");
+            print(payload);
+          },
+        );
+      },
+    );
+  }
 
   Widget _inputBox({required IconData icon, required String text}) {
     return Container(
@@ -439,7 +449,6 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
       ),
     );
   }
-  
 
   Widget _dateHint() {
     return Row(

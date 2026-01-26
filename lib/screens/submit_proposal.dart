@@ -40,8 +40,8 @@ class SubmitProposalScreen extends StatelessWidget {
                   crossAxisCount: MediaQuery.of(context).size.width > 900
                       ? 4
                       : MediaQuery.of(context).size.width > 600
-                          ? 2
-                          : 1,
+                      ? 2
+                      : 1,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                   childAspectRatio: 1.35,
@@ -52,7 +52,9 @@ class SubmitProposalScreen extends StatelessWidget {
                   return _CategoryCard(
                     item: item,
                     onTap: () {
-                      Get.to(() => ProposalEntryScreen(categoryTitle: item.title));
+                      Get.to(
+                        () => ProposalEntryScreen(categoryTitle: item.title),
+                      );
                     },
                   );
                 },
@@ -83,7 +85,10 @@ class _InfoCard extends StatelessWidget {
           children: const [
             Row(
               children: [
-                Icon(Icons.playlist_add_check_rounded, color: Color(0xff2563EB)),
+                Icon(
+                  Icons.playlist_add_check_rounded,
+                  color: Color(0xff2563EB),
+                ),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -102,14 +107,16 @@ class _InfoCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.warning_amber_rounded,
-                    size: 18, color: Color(0xffDC2626)),
+                Icon(
+                  Icons.warning_amber_rounded,
+                  size: 18,
+                  color: Color(0xffDC2626),
+                ),
                 SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     "Proposal submission is allowed only after PR approval by DC.",
-                    style:
-                        TextStyle(fontSize: 13, color: Color(0xffB91C1C)),
+                    style: TextStyle(fontSize: 13, color: Color(0xffB91C1C)),
                   ),
                 ),
               ],
@@ -151,7 +158,9 @@ class _CategoryCard extends StatelessWidget {
                     child: Text(
                       item.title,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 13),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -161,8 +170,7 @@ class _CategoryCard extends StatelessWidget {
                 item.description,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style:
-                    const TextStyle(fontSize: 13, color: Color(0xff4B5563)),
+                style: const TextStyle(fontSize: 13, color: Color(0xff4B5563)),
               ),
               const Spacer(),
               const Divider(height: 1),
@@ -170,10 +178,11 @@ class _CategoryCard extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
                   onPressed: onTap,
-                  icon:
-                      const Icon(Icons.arrow_forward_rounded, size: 18),
-                  label: const Text("Go To Assistance",
-                      style: TextStyle(fontSize: 12)),
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                  label: const Text(
+                    "Go To Assistance",
+                    style: TextStyle(fontSize: 12),
+                  ),
                 ),
               ),
             ],
@@ -207,22 +216,21 @@ final List<ProposalCategory> _categories = [
   ProposalCategory(
     icon: Icons.agriculture_rounded,
     title: "Agriculture & Horticulture Loss",
-    description:
-        "Financial aid for crop loss and damaged horticulture assets.",
+    description: "Financial aid for crop loss and damaged horticulture assets.",
     route: '/agriculture_horticulture',
   ),
-  // ProposalCategory(
-  //   icon: Icons.set_meal_rounded,
-  //   title: "Fishery",
-  //   description:
-  //       "Repair or replacement of boats, nets, and fishery equipment.",
-  // ),
-  // ProposalCategory(
-  //   icon: Icons.handyman_rounded,
-  //   title: "Handloom & Handicrafts",
-  //   description:
-  //       "Aid for damaged tools, materials, and artisan equipment.",
-  // ),
+  ProposalCategory(
+    icon: Icons.set_meal_rounded,
+    title: "Fishery",
+    description: "Repair or replacement of boats, nets, and fishery equipment.",
+    route: '/fishery',
+  ),
+  ProposalCategory(
+    icon: Icons.handyman_rounded,
+    title: "Handloom & Handicrafts",
+    description: "Aid for damaged tools, materials, and artisan equipment.",
+    route: '/handloom_handicrafts',
+  ),
   ProposalCategory(
     icon: Icons.house_rounded,
     title: "Housing Damage",

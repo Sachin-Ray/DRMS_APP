@@ -1,5 +1,5 @@
-import 'package:drms/ReportIncidentScreen_Widgets/beneficiary_models.dart';
 import 'package:flutter/material.dart';
+import 'beneficiary_models.dart';
 
 class AmountWidget extends StatelessWidget {
   final AssistanceDetails model;
@@ -12,12 +12,21 @@ class AmountWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _required("Eligible Amount (₹)"),
-        TextFormField(
-          keyboardType: TextInputType.number,
-          decoration: _input("Enter amount"),
-          onChanged: (v) => model.amount = double.tryParse(v),
-          validator: (v) => v!.isEmpty ? "Required" : null,
+        const SizedBox(height: 8),
+
+        ValueListenableBuilder<double>(
+          valueListenable: model.amountNotifier,
+          builder: (context, amount, child) {
+            return TextFormField(
+              readOnly: true,
+              decoration: _input("0"),
+              controller: TextEditingController(
+                text: amount.toStringAsFixed(0),
+              ),
+            );
+          },
         ),
+
         const SizedBox(height: 6),
         const Text(
           "As per SDRF guidelines",
@@ -28,23 +37,19 @@ class AmountWidget extends StatelessWidget {
   }
 
   InputDecoration _input(String hint) => InputDecoration(
-        hintText: hint,
-        filled: true,
-        fillColor: const Color(0xffF5F5F7),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xffE5E7EB)),
-        ),
-      );
+    hintText: hint,
+    filled: true,
+    fillColor: const Color(0xffF5F5F7),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide.none,
+    ),
+  );
 
   Widget _required(String label) => Row(
-        children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-          const Text("*", style: TextStyle(color: Colors.red)),
-        ],
-      );
+    children: [
+      Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+      const Text("*", style: TextStyle(color: Colors.red)),
+    ],
+  );
 }

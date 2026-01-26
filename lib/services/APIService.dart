@@ -1,3 +1,4 @@
+import 'package:drms/model/BankBranch.dart';
 import 'package:drms/model/Block.dart';
 import 'package:drms/model/Calamity.dart';
 import 'package:drms/model/ExGratiaBeneficiary.dart';
@@ -20,7 +21,8 @@ class APIService {
   static const String cropsapURL =
       "https://cropsap.megfarmer.gov.in/api/getForecast/";
   // static const String drmsURL = "http://10.179.2.219:8083/drms/v-1/app/api/";
-  static const String drmsURL = "https://relief.megrevenuedm.gov.in/stagingapi/drms/v-1/app/api/";
+  static const String drmsURL =
+      "https://relief.megrevenuedm.gov.in/stagingapi/drms/v-1/app/api/";
 
   Future<User?> login(String username, String password) async {
     try {
@@ -226,24 +228,78 @@ class APIService {
   }
 
   Future<List<ExGratiaNorm>?> getExGratiaNorms() async {
-  try {
-    final response = await CustomHTTPRequest().get(
-        "${drmsURL}exgratianorms",
+    try {
+      final response = await CustomHTTPRequest().get("${drmsURL}exgratianorms");
+
+      if (response.statusCode != 200) return null;
+
+      final Map<String, dynamic> jsonBody = jsonDecode(response.body);
+
+      if (jsonBody['status'] != "SUCCESS") return null;
+
+      final List list = jsonBody['data'];
+
+      return list.map((e) => ExGratiaNorm.fromJson(e)).toList();
+    } catch (e) {
+      debugPrint("ExGratiaNorm API Error: $e");
+      return null;
+    }
+  }
+
+  Future<List<BankBranch>> getBankByIFSC(String ifsc) async {
+    try {
+      final response = await CustomHTTPRequest().get(
+        "https://relief.megrevenuedm.gov.in/nicdsign/v-1/bankbyIFCD/$ifsc",
       );
 
-    if (response.statusCode != 200) return null;
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+        return data.map((e) => BankBranch.fromJson(e)).toList();
+      }
 
-    final Map<String, dynamic> jsonBody = jsonDecode(response.body);
+      return [];
+    } catch (e) {
+      debugPrint("getBankByIFSC error: $e");
+      return [];
+    }
+  }
 
-    if (jsonBody['status'] != "SUCCESS") return null;
+  Future<ExGratiaNorm?> getNormByNormCode(int normCode) async {
+    try {
+      final response = await get(
+        Uri.parse(
+          "https://relief.megrevenuedm.gov.in/stagingapi/getnormbynormcode?normcode=$normCode",
+        ),
+      );
 
-    final List list = jsonBody['data'];
-
-    return list.map((e) => ExGratiaNorm.fromJson(e)).toList();
-  } catch (e) {
-    debugPrint("ExGratiaNorm API Error: $e");
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return ExGratiaNorm.fromJson(json);
+      }
+    } catch (e) {
+      debugPrint("NormCode API Error: $e");
+    }
     return null;
   }
-}
 
+  Future<List<Map<String, dynamic>>?> fetchLandNorms({
+    required String farmertype,
+    required String subtype,
+  }) async {
+    try {
+      final response = await CustomHTTPRequest().get(
+        "https://relief.megrevenuedm.gov.in/fetchlandnorms?farmertype=$farmertype&subtype=$subtype",
+      );
+
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+
+        return data.map((e) => e as Map<String, dynamic>).toList();
+      }
+      return null;
+    } catch (e) {
+      debugPrint("Land Norm Fetch Error: $e");
+      return null;
+    }
+  }
 }

@@ -240,8 +240,6 @@ class _BeneficiaryDetailsWidgetState extends State<BeneficiaryDetailsWidget> {
     required String? groupValue,
     required Function(String) onChanged,
   }) {
-    final bool selected = value == groupValue;
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

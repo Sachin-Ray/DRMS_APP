@@ -1,21 +1,23 @@
-import 'package:drms/ReportIncidentScreen_Widgets/accordion_section.dart';
-import 'package:drms/ReportIncidentScreen_Widgets/amount_widget.dart';
-import 'package:drms/ReportIncidentScreen_Widgets/assistance_widget.dart';
-import 'package:drms/ReportIncidentScreen_Widgets/bank_details_widget.dart';
-import 'package:drms/ReportIncidentScreen_Widgets/beneficiary_details_widget.dart';
-import 'package:drms/ReportIncidentScreen_Widgets/beneficiary_documents_widget.dart';
-import 'package:drms/ReportIncidentScreen_Widgets/beneficiary_models.dart';
-import 'package:drms/ReportIncidentScreen_Widgets/remarks_widget.dart';
-import 'package:drms/model/Block.dart';
-import 'package:drms/model/Village.dart';
 import 'package:flutter/material.dart';
 
-class AddBeneficiaryDialog extends StatefulWidget {
+import 'accordion_section.dart';
+import 'amount_widget.dart';
+import 'bank_details_widget.dart';
+import 'beneficiary_details_widget.dart';
+import 'beneficiary_documents_widget.dart';
+
+import 'beneficiary_models.dart';
+import 'agriculture_assistance_widget.dart';
+
+import 'package:drms/model/Block.dart';
+import 'package:drms/model/Village.dart';
+
+class AddAgricultureBeneficiaryDialog extends StatefulWidget {
   final List<Block> blocks;
   final List<Village> villages;
   final Function(Map<String, dynamic>) onSave;
 
-  const AddBeneficiaryDialog({
+  const AddAgricultureBeneficiaryDialog({
     super.key,
     required this.blocks,
     required this.villages,
@@ -23,19 +25,21 @@ class AddBeneficiaryDialog extends StatefulWidget {
   });
 
   @override
-  State<AddBeneficiaryDialog> createState() => _AddBeneficiaryDialogState();
+  State<AddAgricultureBeneficiaryDialog> createState() =>
+      _AddAgricultureBeneficiaryDialogState();
 }
 
-class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
+class _AddAgricultureBeneficiaryDialogState
+    extends State<AddAgricultureBeneficiaryDialog> {
   final _formKey = GlobalKey<FormState>();
 
-  // MODELS
+  // ✅ MODELS
   final BeneficiaryDetails beneficiary = BeneficiaryDetails();
   final AssistanceDetails assistance = AssistanceDetails();
   final BankDetails bank = BankDetails();
   final BeneficiaryDocuments documents = BeneficiaryDocuments();
 
-  // ACCORDION STATE
+  // ✅ Accordion State
   bool b1 = true;
   bool b2 = false;
   bool b3 = false;
@@ -61,7 +65,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // HEADER
+              // ================= HEADER =================
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -75,7 +79,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                   children: [
                     const Expanded(
                       child: Text(
-                        "Add Beneficiary",
+                        "Add Agriculture Beneficiary",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -91,12 +95,13 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                 ),
               ),
 
-              // BODY
+              // ================= BODY =================
               Flexible(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
+                      // 1️⃣ Beneficiary Details
                       AccordionSection(
                         title: "Beneficiary Details",
                         expanded: b1,
@@ -110,13 +115,17 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                         ],
                       ),
 
+                      // 2️⃣ Agriculture Assistance Specific Details
                       AccordionSection(
-                        title: "Select Assistance",
+                        title: "Agriculture Assistance Specific Details",
                         expanded: b2,
                         onToggle: () => setState(() => b2 = !b2),
-                        children: [AssistanceWidget(model: assistance)],
+                        children: [
+                          AgricultureAssistanceWidget(model: assistance),
+                        ],
                       ),
 
+                      // 3️⃣ Amount Widget
                       AccordionSection(
                         title: "Amount Eligible As Per SDRF Norms",
                         expanded: b3,
@@ -124,6 +133,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                         children: [AmountWidget(model: assistance)],
                       ),
 
+                      // 4️⃣ Bank Details
                       AccordionSection(
                         title: "Beneficiary Bank Account Details",
                         expanded: b4,
@@ -131,17 +141,32 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                         children: [BankDetailsWidget(model: bank)],
                       ),
 
+                      // 5️⃣ Remarks Section (same widget later)
                       AccordionSection(
                         title: "Remarks",
-                        expanded: b6,
-                        onToggle: () => setState(() => b6 = !b6),
-                        children: [RemarksWidget(model: assistance)],
-                      ),
-
-                      AccordionSection(
-                        title: "Documents",
                         expanded: b5,
                         onToggle: () => setState(() => b5 = !b5),
+                        children: [
+                          TextFormField(
+                            decoration: InputDecoration(
+                              hintText: "Enter remarks",
+                              filled: true,
+                              fillColor: const Color(0xffF5F5F7),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            onChanged: (v) => assistance.remarks = v,
+                          ),
+                        ],
+                      ),
+
+                      // 6️⃣ Documents
+                      AccordionSection(
+                        title: "Documents",
+                        expanded: b6,
+                        onToggle: () => setState(() => b6 = !b6),
                         children: [
                           BeneficiaryDocumentsWidget(model: documents),
                         ],
@@ -151,7 +176,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                 ),
               ),
 
-              // FOOTER BUTTONS
+              // ================= FOOTER BUTTONS =================
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -179,11 +204,10 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     );
   }
 
+  // ================= SAVE FUNCTION =================
   void _saveBeneficiary() {
     if (!_formKey.currentState!.validate()) {
-      setState(() {
-        b1 = true;
-      });
+      setState(() => b1 = true);
       return;
     }
 
