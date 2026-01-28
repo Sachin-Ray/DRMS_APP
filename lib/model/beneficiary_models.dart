@@ -30,6 +30,9 @@ class AssistanceDetails {
   // Live amount notifier
   ValueNotifier<double> amountNotifier = ValueNotifier(0);
 
+   List<int> get selectedNormCodes =>
+      normCode != null ? [normCode!] : [];
+
   // Victim names list
   List<String> victimNames = [];
 
@@ -49,14 +52,14 @@ class AssistanceDetails {
 class BankDetails {
   String? ifsc;
   String? bankName;
-  String? branchName;
+  String? branchCode;
   String? accountNumber;
   String? confirmAccountNumber;
 
   Map<String, dynamic> toJson() => {
     "ifsc": ifsc,
     "bankName": bankName,
-    "branchName": branchName,
+    "branchCode": branchCode,
     "accountNumber": accountNumber,
   };
 }

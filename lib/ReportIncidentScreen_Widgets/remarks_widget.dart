@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'beneficiary_models.dart';
+import '../model/beneficiary_models.dart';
 
 class RemarksWidget extends StatelessWidget {
   final AssistanceDetails model;

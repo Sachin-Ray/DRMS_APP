@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:drms/services/APIService.dart';
-import 'beneficiary_models.dart';
+import '../model/beneficiary_models.dart';
 
 class HandloomAssistanceWidget extends StatefulWidget {
   final AssistanceDetails model;

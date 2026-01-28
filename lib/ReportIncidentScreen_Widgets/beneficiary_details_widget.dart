@@ -1,4 +1,4 @@
-import 'package:drms/ReportIncidentScreen_Widgets/beneficiary_models.dart';
+import 'package:drms/model/beneficiary_models.dart';
 import 'package:drms/model/Block.dart';
 import 'package:drms/model/Village.dart';
 import 'package:drms/services/APIService.dart';
@@ -111,7 +111,7 @@ class _BeneficiaryDetailsWidgetState extends State<BeneficiaryDetailsWidget> {
           children: [
             _radioPill(
               label: "Adult",
-              value: "Adult",
+              value: "adult",
               groupValue: widget.model.ageCategory,
               onChanged: (v) {
                 setState(() => widget.model.ageCategory = v);
@@ -120,7 +120,7 @@ class _BeneficiaryDetailsWidgetState extends State<BeneficiaryDetailsWidget> {
             const SizedBox(width: 10),
             _radioPill(
               label: "Minor",
-              value: "Minor",
+              value: "minor",
               groupValue: widget.model.ageCategory,
               onChanged: (v) {
                 setState(() => widget.model.ageCategory = v);
@@ -134,17 +134,23 @@ class _BeneficiaryDetailsWidgetState extends State<BeneficiaryDetailsWidget> {
         const SizedBox(height: 8),
         Wrap(
           spacing: 10,
-          children: ["Male", "Female", "Others"].map((g) {
-            return _radioPill(
-              label: g,
-              value: g,
-              groupValue: widget.model.gender,
-              onChanged: (v) {
-                setState(() => widget.model.gender = v);
-              },
-            );
-          }).toList(),
+          children:
+              [
+                {"label": "Male", "value": "M"},
+                {"label": "Female", "value": "F"},
+                {"label": "Others", "value": "O"},
+              ].map((g) {
+                return _radioPill(
+                  label: g["label"]!,
+                  value: g["value"]!,
+                  groupValue: widget.model.gender,
+                  onChanged: (v) {
+                    setState(() => widget.model.gender = v);
+                  },
+                );
+              }).toList(),
         ),
+
         const SizedBox(height: 16),
 
         _required("Block"),
@@ -187,6 +193,7 @@ class _BeneficiaryDetailsWidgetState extends State<BeneficiaryDetailsWidget> {
                   : (v) {
                       setState(() {
                         selectedBlock = v;
+                        widget.model.blockCode = v?.blockcode;
                       });
 
                       if (v != null) {
@@ -224,7 +231,7 @@ class _BeneficiaryDetailsWidgetState extends State<BeneficiaryDetailsWidget> {
               ? null
               : (v) {
                   setState(() {
-                    widget.model.village = v?.villagename;
+                    widget.model.village = v?.villagecode;
                   });
                 },
           validator: (v) => v == null ? "Required" : null,

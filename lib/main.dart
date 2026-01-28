@@ -41,7 +41,6 @@ class MyApp extends StatelessWidget {
           error: Color(0xffE76F51),
         ),
 
-        // Elevated button styling - Modern and sleek
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: Color(0xff6C63FF),
@@ -55,7 +54,6 @@ class MyApp extends StatelessWidget {
           ),
         ),
 
-        // Outlined button styling
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             foregroundColor: Color(0xff6C63FF),
@@ -66,7 +64,6 @@ class MyApp extends StatelessWidget {
           ),
         ),
 
-        // Text button styling
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
             foregroundColor: Color(0xff6C63FF),
@@ -74,7 +71,6 @@ class MyApp extends StatelessWidget {
           ),
         ),
 
-        // Input fields - Clean and modern
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Color(0xffF5F5F7),

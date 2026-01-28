@@ -4,6 +4,7 @@ import 'package:drms/model/Calamity.dart';
 import 'package:drms/model/ExGratiaBeneficiary.dart';
 import 'package:drms/model/ExGratiaNorm%20.dart';
 import 'package:drms/model/Infrastructure.dart';
+import 'package:drms/model/RequiredDocument.dart';
 import 'package:drms/model/User.dart';
 import 'package:drms/model/Village.dart';
 import 'package:drms/services/CustomHTTPRequest.dart';
@@ -20,13 +21,13 @@ class APIService {
       "https://fisheries.meghalaya.gov.in/fishFarmerPortal/";
   static const String cropsapURL =
       "https://cropsap.megfarmer.gov.in/api/getForecast/";
-  // static const String drmsURL = "http://10.179.2.219:8083/drms/v-1/app/api/";
-  static const String drmsURL =
-      "https://relief.megrevenuedm.gov.in/stagingapi/drms/v-1/app/api/";
+  static const String drmsURL = "http://10.179.2.219:8083/drms/v-1/app/api/";
+  // static const String drmsURL =
+  //     "https://relief.megrevenuedm.gov.in/stagingapi/drms/v-1/app/api/";
 
   Future<User?> login(String username, String password) async {
     try {
-      Response response = await CustomHTTPRequest().post(
+      final response = await CustomHTTPRequest().post(
         "$baseURL/userlogin",
         jsonEncode({"username": username, "password": password}),
       );
@@ -44,7 +45,7 @@ class APIService {
 
   Future<List<Calamity>?> getAllCalamities() async {
     try {
-      Response response = await CustomHTTPRequest().get(
+      final response = await CustomHTTPRequest().get(
         "${drmsURL}getallcalamity",
       );
 
@@ -64,7 +65,7 @@ class APIService {
 
   Future<List<Block>?> getAllBlocks(String districtCode) async {
     try {
-      Response response = await CustomHTTPRequest().get(
+      final response = await CustomHTTPRequest().get(
         "${drmsURL}getallblock/$districtCode",
       );
 
@@ -81,7 +82,7 @@ class APIService {
 
   Future<List<Village>?> getAllVillages(int blockCode) async {
     try {
-      Response response = await CustomHTTPRequest().get(
+      final response = await CustomHTTPRequest().get(
         "${drmsURL}getallvillage/$blockCode",
       );
 
@@ -128,6 +129,51 @@ class APIService {
   //   }
   //   return null;
   // }
+
+  Future<Map<String, dynamic>?> submitSaveAssistanceForm(
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      final response = await CustomHTTPRequest().post(
+        "${drmsURL}saveassistanceform",
+        jsonEncode(payload),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e, stack) {
+      debugPrint("❌ Submit error: $e");
+      print(stack);
+    }
+    return null;
+  }
+
+  Future<List<RequiredDocument>> fetchDocuments(
+    int normCode,
+    String firNo,
+  ) async {
+    final response = await CustomHTTPRequest().get(
+      "${drmsURL}getalldocumentbynormcodes?norms=$normCode&fir=$firNo",
+    );
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+
+      // ✅ Case 1: API returns List directly
+      if (decoded is List) {
+        return decoded.map((e) => RequiredDocument.fromJson(e)).toList();
+      }
+
+      // ✅ Case 2: API returns Map wrapper
+      if (decoded is Map && decoded["data"] is List) {
+        final List list = decoded["data"];
+        return list.map((e) => RequiredDocument.fromJson(e)).toList();
+      }
+    }
+
+    return [];
+  }
 
   Future<Map<String, dynamic>?> submitIncidentReport(
     Map<String, dynamic> payload,
@@ -213,19 +259,55 @@ class APIService {
         "${drmsURL}getexgratiafromfir"
         "?firNo=$firNo"
         "&assistanceHead=$assistanceHead"
-        "&reportid=",
+        "&reportid=$reportId",
       );
 
       if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body);
-        return data.map((e) => ExGratiaBeneficiary.fromJson(e)).toList();
+        final decoded = jsonDecode(response.body);
+
+        if (decoded is Map &&
+            decoded["status"] == "SUCCESS" &&
+            decoded["data"] is List) {
+          return (decoded["data"] as List)
+              .map((e) => ExGratiaBeneficiary.fromJson(e))
+              .toList();
+        }
       }
       return [];
-    } catch (e) {
-      debugPrint("getExGratiaFromFir error: $e");
+    } catch (e, stack) {
+      debugPrint("❌ getExGratiaFromFir error: $e");
+      debugPrintStack(stackTrace: stack);
       return [];
     }
   }
+
+  /// 📄 Open uploaded beneficiary document
+  // Future<void> openBeneficiaryDocument(String documentCode) async {
+  //   try {
+  //     final uri = Uri.parse("${drmsURL}fetchBendocFile?doc=$documentCode");
+
+  //     if (await canLaunchUrl(uri)) {
+  //       await launchUrl(uri, mode: LaunchMode.externalApplication);
+  //     } else {
+  //       debugPrint("❌ Cannot launch document: $uri");
+  //     }
+  //   } catch (e) {
+  //     debugPrint("❌ openBeneficiaryDocument error: $e");
+  //   }
+  // }
+
+//   Future<void> _downloadAndOpenFile(String url, String fileName) async {
+//   try {
+//     final dir = await getTemporaryDirectory();
+//     final savePath = "${dir.path}/$fileName";
+
+//     await Dio().download(url, savePath);
+
+//     await OpenFilex.open(savePath);
+//   } catch (e) {
+//     debugPrint("❌ File open error: $e");
+//   }
+// }
 
   Future<List<ExGratiaNorm>?> getExGratiaNorms() async {
     try {
@@ -283,23 +365,104 @@ class APIService {
   }
 
   Future<List<Map<String, dynamic>>?> fetchLandNorms({
-    required String farmertype,
-    required String subtype,
-  }) async {
-    try {
-      final response = await CustomHTTPRequest().get(
-        "https://relief.megrevenuedm.gov.in/fetchlandnorms?farmertype=$farmertype&subtype=$subtype",
-      );
+  required String farmertype,
+  required String subtype,
+}) async {
+  try {
+    final response = await CustomHTTPRequest().get(
+      "${drmsURL}fetchlandnorms?farmertype=$farmertype&subtype=$subtype",
+    );
 
-      if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
 
-        return data.map((e) => e as Map<String, dynamic>).toList();
+      // ✅ Response is Map, not List
+      if (decoded is Map<String, dynamic>) {
+        if (decoded["status"] == "SUCCESS" &&
+            decoded["data"] is List) {
+          final List list = decoded["data"];
+
+          // ✅ Convert List<dynamic> into List<Map>
+          return list.map((e) => e as Map<String, dynamic>).toList();
+        }
       }
-      return null;
-    } catch (e) {
-      debugPrint("Land Norm Fetch Error: $e");
-      return null;
     }
+
+    return null;
+  } catch (e) {
+    debugPrint("❌ Land Norm Fetch Error: $e");
+    return null;
   }
+}
+
+// Future<List<Map<String, dynamic>>> fetchInputSubsidyNorms({
+//   required String farmertype,
+//   required String subtype,
+//   required String losstype,
+// }) async {
+//   try {
+//     final response = await CustomHTTPRequest().get(
+//       "${drmsURL}fetchsericulturenorms"
+//       "?farmertype=$farmertype"
+//       "&subtype=$subtype"
+//       "&losstype=$losstype",
+//     );
+
+//     if (response.statusCode == 200) {
+//       final decoded = jsonDecode(response.body);
+
+//       if (decoded is List) {
+//         return decoded.map((e) => e as Map<String, dynamic>).toList();
+//       }
+//     }
+//     return [];
+//   } catch (e) {
+//     debugPrint("❌ Input Subsidy Norm Fetch Error: $e");
+//     return [];
+//   }
+// }
+
+// ================= INPUT SUBSIDY NORMS =================
+
+Future<List<Map<String, dynamic>>> fetchInputSubsidyNorms({
+  required String farmertype,
+  required String subtype,
+  required String losstype,
+}) async {
+  try {
+    String url = "";
+
+    if (losstype == "agriculture, horticulture and annual crop") {
+      url =
+          "${drmsURL}fetchsericulturenorms?farmertype=$farmertype&subtype=$subtype&losstype=${Uri.encodeComponent(losstype)}";
+    }
+
+    if (losstype == "perinial crop") {
+      url =
+          "${drmsURL}fetchperennialnorms?farmertype=$farmertype&subtype=$subtype&losstype=${Uri.encodeComponent(losstype)}";
+    }
+
+    if (losstype == "sericulture crop") {
+      url =
+          "${drmsURL}fetchsericulturenorms?farmertype=$farmertype&subtype=$subtype&losstype=${Uri.encodeComponent(losstype)}";
+    }
+
+    final response = await CustomHTTPRequest().get(url);
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+
+      // ✅ Response is List
+      if (decoded is List) {
+        return decoded.map((e) => e as Map<String, dynamic>).toList();
+      }
+    }
+
+    return [];
+  } catch (e) {
+    debugPrint("❌ Input Subsidy Norm Fetch Error: $e");
+    return [];
+  }
+}
+
 }

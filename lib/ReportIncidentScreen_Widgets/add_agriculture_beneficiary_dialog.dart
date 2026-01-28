@@ -6,7 +6,7 @@ import 'bank_details_widget.dart';
 import 'beneficiary_details_widget.dart';
 import 'beneficiary_documents_widget.dart';
 
-import 'beneficiary_models.dart';
+import '../model/beneficiary_models.dart';
 import 'agriculture_assistance_widget.dart';
 
 import 'package:drms/model/Block.dart';

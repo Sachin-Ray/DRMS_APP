@@ -1,7 +1,7 @@
 import 'package:drms/model/ExGratiaNorm%20.dart';
 import 'package:drms/services/APIService.dart';
 import 'package:flutter/material.dart';
-import 'beneficiary_models.dart';
+import '../model/beneficiary_models.dart';
 
 class AssistanceWidget extends StatefulWidget {
   final AssistanceDetails model;

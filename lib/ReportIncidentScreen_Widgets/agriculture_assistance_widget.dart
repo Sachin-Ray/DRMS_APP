@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:drms/services/APIService.dart';
-import 'beneficiary_models.dart';
+import '../model/beneficiary_models.dart';
 
 class AgricultureAssistanceWidget extends StatefulWidget {
   final AssistanceDetails model;
@@ -63,7 +63,7 @@ class _AgricultureAssistanceWidgetState
 
     calculatedAmount = normAmount * affected;
 
-    // Send to Amount Widget
+    // Send value back to parent
     widget.model.amountNotifier.value = calculatedAmount;
   }
 
@@ -212,29 +212,42 @@ class _AgricultureAssistanceWidgetState
           const SizedBox(height: 8),
 
           DropdownButtonFormField<Map<String, dynamic>>(
-            value: selectedLandNorm,
-            decoration: _input(loadingNorms ? "Loading..." : "--Select--"),
+            initialValue: selectedLandNorm,
+            isExpanded: true,
 
-            items: landNorms.map((e) {
+            decoration: _inputDecoration(
+              loadingNorms ? "Loading land types..." : "Select land type",
+            ),
+
+            items: landNorms.map((norm) {
               return DropdownMenuItem<Map<String, dynamic>>(
-                value: e,
-                child: Text(e["losstype"] ?? ""),
+                value: norm,
+                child: Text(
+                  norm["losstype"] ?? "",
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
               );
             }).toList(),
 
-            onChanged: (v) {
-              if (v == null) return;
+            onChanged: loadingNorms
+                ? null
+                : (value) {
+                    if (value == null) return;
 
-              setState(() {
-                selectedLandNorm = v;
+                    setState(() {
+                      selectedLandNorm = value;
 
-                normAmount = double.tryParse(v["value"].toString()) ?? 0;
+                      // ✅ Amount extraction
+                      normAmount =
+                          double.tryParse(value["value"].toString()) ?? 0;
 
-                calculateFinalAmount();
-              });
-            },
+                      calculateFinalAmount();
+                    });
+                  },
 
-            validator: (v) => v == null ? "Land Type selection required" : null,
+            validator: (value) =>
+                value == null ? "This field is required" : null,
           ),
 
           const SizedBox(height: 16),
@@ -349,6 +362,36 @@ class _AgricultureAssistanceWidgetState
       borderSide: BorderSide.none,
     ),
   );
+
+  InputDecoration _inputDecoration(String hint) {
+  return InputDecoration(
+    hintText: hint,
+    filled: true,
+    fillColor: const Color(0xffF5F5F7),
+
+    contentPadding:
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide.none,
+    ),
+
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xffE5E7EB)),
+    ),
+
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(
+        color: Color(0xff2563EB),
+        width: 1.5,
+      ),
+    ),
+  );
+}
+
 
   Widget _requiredLabel(String label) => Row(
     children: [

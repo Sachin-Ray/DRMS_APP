@@ -7,7 +7,7 @@ import 'package:drms/ReportIncidentScreen_Widgets/remarks_widget.dart';
 
 import 'package:drms/ReportIncidentScreen_Widgets/handloom_assistance_widget.dart';
 
-import 'package:drms/ReportIncidentScreen_Widgets/beneficiary_models.dart';
+import 'package:drms/model/beneficiary_models.dart';
 import 'package:drms/model/Block.dart';
 import 'package:drms/model/Village.dart';
 import 'package:flutter/material.dart';

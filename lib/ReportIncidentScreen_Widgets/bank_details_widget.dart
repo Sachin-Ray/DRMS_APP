@@ -1,7 +1,7 @@
 import 'package:drms/model/BankBranch.dart';
 import 'package:flutter/material.dart';
 import 'package:drms/services/APIService.dart';
-import 'beneficiary_models.dart';
+import '../model/beneficiary_models.dart';
 
 class BankDetailsWidget extends StatefulWidget {
   final BankDetails model;
@@ -47,7 +47,7 @@ class _BankDetailsWidgetState extends State<BankDetailsWidget> {
       // Auto select branch if only 1
       if (branches.length == 1) {
         selectedBranch = branches.first;
-        widget.model.branchName = selectedBranch!.branchCode;
+        widget.model.branchCode = selectedBranch!.branchCode;
       }
     }
 
@@ -110,7 +110,8 @@ class _BankDetailsWidgetState extends State<BankDetailsWidget> {
               selectedBranch = v;
 
               // ✅ Store full branchCode
-              widget.model.branchName = v?.branchCode;
+              widget.model.branchCode = v?.branchCode;
+
             });
           },
 

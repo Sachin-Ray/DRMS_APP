@@ -1,7 +1,9 @@
 import 'package:drms/ReportIncidentScreen_Widgets/add_agriculture_beneficiary_dialog.dart';
-import 'package:drms/ReportIncidentScreen_Widgets/add_beneficiary_dialog.dart';
+import 'package:drms/ReportIncidentScreen_Widgets/add_gr_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/add_handloom_beneficiary_dialog.dart';
+import 'package:drms/ReportIncidentScreen_Widgets/exgratia_beneficiary_list.dart';
 import 'package:drms/app_scaffold.dart';
+import 'package:drms/model/ExGratiaBeneficiary.dart';
 import 'package:drms/services/APIService.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -28,6 +30,9 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
   bool isLoadingPRs = false;
   bool showBeneficiarySection = false;
 
+  List<ExGratiaBeneficiary> all_beneficiaries = [];
+  bool isLoadingBeneficiaries = false;
+
   // List<ExGratiaBeneficiary> beneficiaries = [];
   // bool showBeneficiarySection = false;
   bool allDocumentsUploaded = true;
@@ -36,7 +41,7 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
   final List<String> prList = [];
 
   /// Dummy beneficiaries (replace later with API)
-  final List<Map<String, dynamic>> beneficiaries = [];
+  // final List<Map<String, dynamic>> beneficiaries = [];
 
   @override
   void initState() {
@@ -57,6 +62,27 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
     } catch (_) {}
 
     if (mounted) setState(() => isLoadingDates = false);
+  }
+
+  Future<void> _loadBeneficiaries() async {
+    if (selectedPR == null) return;
+
+    setState(() => isLoadingBeneficiaries = true);
+
+    final list = await APIService.instance.getExGratiaFromFir(
+      firNo: selectedPR!,
+      assistanceHead: "AH-GR",
+    );
+
+    debugPrint("Loaded beneficiaries count: ${list.length}");
+
+
+    if (!mounted) return;
+
+    setState(() {
+      all_beneficiaries = list;
+      isLoadingBeneficiaries = false;
+    });
   }
 
   Future<void> _loadPRsForDate(DateTime date) async {
@@ -164,7 +190,7 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
                 // onPressed: showBeneficiarySection
                 //     ? _openBeneficiaryModal
                 //     : null,
-                onPressed: _openBeneficiaryModal,
+                onPressed: selectedPR == null ? null : _openBeneficiaryModal,
                 icon: const Icon(Icons.person_add_alt_1),
                 label: const Text("Add Beneficiary"),
                 style: ElevatedButton.styleFrom(
@@ -325,6 +351,7 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
           selectedPR = v;
           showBeneficiarySection = true;
         });
+        _loadBeneficiaries();
       },
     );
   }
@@ -336,51 +363,85 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
       color: Colors.white,
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.people, size: 20, color: primaryBlue),
-                SizedBox(width: 6),
-                Text(
-                  "List Of Beneficiaries",
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                ),
-              ],
-            ),
+          const SizedBox(height: 12),
+          const Text(
+            "List Of Beneficiaries",
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
           ),
-
           const Divider(),
 
-          if (beneficiaries.isEmpty)
+          if (isLoadingBeneficiaries)
             const Padding(
               padding: EdgeInsets.all(24),
-              child: Text(
-                "No records found",
-                style: TextStyle(color: Colors.grey),
-              ),
+              child: CircularProgressIndicator(),
+            )
+          else if (all_beneficiaries.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Text("No records found"),
+            )
+          else
+            ExGratiaBeneficiaryList(
+              list: all_beneficiaries,
+              onEdit: _editBeneficiary,
+              onDelete: _deleteBeneficiary,
             ),
         ],
+        
       ),
+      
     );
   }
 
-  // void _openBeneficiaryModal() {
-  //   showDialog(
-  //     context: context,
-  //     builder: (_) => Dialog(
-  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-  //       child: const Padding(
-  //         padding: EdgeInsets.all(16),
-  //         child: Text(
-  //           "Add Beneficiary",
-  //           style: TextStyle(fontWeight: FontWeight.w600),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
+  void _editBeneficiary(ExGratiaBeneficiary b) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AddBeneficiaryDialog(
+        firNo: selectedPR!,
+        blocks: [],
+        villages: [],
+        existingBeneficiary: b,
+      ),
+    ).then((_) => _loadBeneficiaries());
+  }
+
+  Future<void> _deleteBeneficiary(ExGratiaBeneficiary b) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Confirm Delete"),
+        content: const Text("Do you want to delete this beneficiary?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("No"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Yes"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    // 🔜 call delete API here later
+
+    setState(() {
+      all_beneficiaries.removeWhere((e) => e.beneficiaryId == b.beneficiaryId);
+    });
+  }
+
+  bool get canDraftProposal {
+  if (all_beneficiaries.isEmpty) return false;
+
+  return all_beneficiaries.every(
+    (b) => b.documents.isNotEmpty,
+  );
+}
+
 
   void _openBeneficiaryModal() {
     showDialog(
@@ -411,10 +472,7 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
         return AddBeneficiaryDialog(
           blocks: [],
           villages: [],
-          onSave: (payload) {
-            print("GRATUITOUS RELIEF PAYLOAD:");
-            print(payload);
-          },
+          firNo: selectedPR!,
         );
       },
     );

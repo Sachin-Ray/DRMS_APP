@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:drms/ReportIncidentScreen_Widgets/beneficiary_models.dart';
+import 'package:drms/model/beneficiary_models.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
