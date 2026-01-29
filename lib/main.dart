@@ -16,6 +16,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         // Modern color palette
         primaryColor: Color(0xff6C63FF),
+        
 
         // App Bar styling - Clean and minimal
         appBarTheme: AppBarTheme(

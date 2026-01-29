@@ -23,31 +23,37 @@ class _HandloomAssistanceWidgetState extends State<HandloomAssistanceWidget> {
 
   /// Fetch Norm Value and update amount
   Future<void> _fetchNorm(int code, bool checked) async {
-    setState(() => loading = true);
+  setState(() => loading = true);
 
-    final norm = await APIService.instance.getNormByNormCode(code);
+  final norm = await APIService.instance.getNormByNormCode(code);
 
-    if (norm != null) {
-      if (code == 36) {
-        value36 = checked ? norm.value.toDouble() : 0;
-      }
+  /// ✅ Correct Null Check
+  if (norm != null) {
+    double amount = (norm.value ?? 0).toDouble();
 
-      if (code == 37) {
-        value37 = checked ? norm.value.toDouble() : 0;
-      }
+    if (code == 36) {
+      value36 = checked ? amount : 0;
     }
 
-    /// Total Amount = Addition
-    double total = value36 + value37;
-
-    /// ✅ Update Amount Notifier (Auto Updates AmountWidget)
-    widget.model.amountNotifier.value = total;
-
-    /// Optional: Save assistanceType text
-    widget.model.assistanceType = "Handloom & Handicrafts";
-
-    setState(() => loading = false);
+    if (code == 37) {
+      value37 = checked ? amount : 0;
+    }
+  } else {
+    debugPrint("Norm not found for code: $code");
   }
+
+  /// Total Amount
+  double total = value36 + value37;
+
+  /// ✅ Update Amount Notifier
+  widget.model.amountNotifier.value = total;
+
+  /// Save assistanceType
+  widget.model.assistanceType = "Handloom & Handicrafts";
+
+  setState(() => loading = false);
+}
+
 
   @override
   Widget build(BuildContext context) {

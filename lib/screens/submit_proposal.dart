@@ -8,12 +8,14 @@ class ProposalCategory {
   final String title;
   final String description;
   final String route;
+  final String assistanceHeadCode;
 
   ProposalCategory({
     required this.icon,
     required this.title,
     required this.description,
     required this.route,
+    required this.assistanceHeadCode,
   });
 }
 
@@ -53,7 +55,7 @@ class SubmitProposalScreen extends StatelessWidget {
                     item: item,
                     onTap: () {
                       Get.to(
-                        () => ProposalEntryScreen(categoryTitle: item.title),
+                        () => ProposalEntryScreen(categoryTitle: item.title, assistanceHead: item.assistanceHeadCode),
                       );
                     },
                   );
@@ -200,6 +202,7 @@ final List<ProposalCategory> _categories = [
     description:
         "Ex-gratia assistance to affected families including household goods.",
     route: '/gratuity_relief',
+    assistanceHeadCode: "AH-GR",
   ),
   // ProposalCategory(
   //   icon: Icons.pets_rounded,
@@ -218,18 +221,21 @@ final List<ProposalCategory> _categories = [
     title: "Agriculture & Horticulture Loss",
     description: "Financial aid for crop loss and damaged horticulture assets.",
     route: '/agriculture_horticulture',
+     assistanceHeadCode: "AH-AG",
   ),
   ProposalCategory(
     icon: Icons.set_meal_rounded,
     title: "Fishery",
     description: "Repair or replacement of boats, nets, and fishery equipment.",
     route: '/fishery',
+    assistanceHeadCode: "AH-FS",
   ),
   ProposalCategory(
     icon: Icons.handyman_rounded,
     title: "Handloom & Handicrafts",
     description: "Aid for damaged tools, materials, and artisan equipment.",
     route: '/handloom_handicrafts',
+    assistanceHeadCode: "AH-HU",
   ),
   ProposalCategory(
     icon: Icons.house_rounded,
@@ -237,6 +243,7 @@ final List<ProposalCategory> _categories = [
     description:
         "Support for fully or partially damaged houses and cattle sheds.",
     route: '/housing_damage',
+    assistanceHeadCode: "AH-HD",
   ),
   // ProposalCategory(
   //   icon: Icons.apartment_rounded,

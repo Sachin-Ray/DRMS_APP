@@ -51,6 +51,7 @@ class _AddHandloomBeneficiaryDialogState
   void dispose() {
     assistance.amountNotifier.dispose();
     super.dispose();
+    
   }
 
   @override
@@ -65,7 +66,6 @@ class _AddHandloomBeneficiaryDialogState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ================= HEADER =================
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,

@@ -1,4 +1,5 @@
 import 'package:drms/ReportIncidentScreen_Widgets/add_agriculture_beneficiary_dialog.dart';
+import 'package:drms/ReportIncidentScreen_Widgets/add_fishery_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/add_gr_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/add_handloom_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/exgratia_beneficiary_list.dart';
@@ -11,8 +12,13 @@ import 'package:table_calendar/table_calendar.dart';
 
 class ProposalEntryScreen extends StatefulWidget {
   final String categoryTitle;
+  final String assistanceHead;
 
-  const ProposalEntryScreen({super.key, required this.categoryTitle});
+  const ProposalEntryScreen({
+    super.key,
+    required this.categoryTitle,
+    required this.assistanceHead,
+  });
 
   @override
   State<ProposalEntryScreen> createState() => _ProposalEntryScreenState();
@@ -71,7 +77,7 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
 
     final list = await APIService.instance.getExGratiaFromFir(
       firNo: selectedPR!,
-      assistanceHead: "AH-GR",
+      assistanceHead: widget.assistanceHead,
     );
 
     debugPrint("Loaded beneficiaries count: ${list.length}");
@@ -401,7 +407,7 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
         firNo: selectedPR!,
         blocks: [],
         villages: [],
-        existingBeneficiary: b,
+        // existingBeneficiary: b,
       ),
     ).then((_) => _loadBeneficiaries());
   }
@@ -469,13 +475,24 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
           );
         }
 
+        if (widget.categoryTitle == "Fishery") {
+          return AddFisheryBeneficiaryDialog(
+            blocks: [],
+            villages: [], firNo: '$selectedPR',
+          );
+        }
+
         return AddBeneficiaryDialog(
           blocks: [],
           villages: [],
           firNo: selectedPR!,
         );
       },
-    );
+    ).then((result) {
+    if (result == true) {
+      _loadBeneficiaries();
+    }
+  });
   }
 
   Widget _inputBox({required IconData icon, required String text}) {

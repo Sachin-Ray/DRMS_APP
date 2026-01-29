@@ -1,13 +1,15 @@
 import 'package:drms/model/BeneficiaryDocument.dart';
-import 'package:drms/model/CountVillagePeople%20.dart';
+import 'package:drms/model/CountVillagePeople .dart';
 
 class ExGratiaBeneficiary {
   final String beneficiaryName;
   final String beneficiaryId;
   final String formId;
+
   final String village;
   final String gender;
   final String age;
+
   final int blockCode;
   final String villageCode;
 
@@ -15,6 +17,7 @@ class ExGratiaBeneficiary {
   final int bankId;
   final String branchName;
   final int branchId;
+
   final String? bankCode;
   final String branchCode;
   final String ifscCode;
@@ -23,10 +26,13 @@ class ExGratiaBeneficiary {
   final int amount;
   final String block;
   final String district;
+
   final String dateOfIncidence;
   final String calamity;
+
   final String? victimName;
   final String remarks;
+
   final String assistance;
 
   final List<int> normCode;
@@ -79,47 +85,88 @@ class ExGratiaBeneficiary {
   });
 
   factory ExGratiaBeneficiary.fromJson(Map<String, dynamic> json) {
+
+    final beneficiaryObj = json["beneficiary"] ?? {};
+
+    final villageObj = beneficiaryObj["villagecode"] ?? {};
+
+    final assistanceList = json["assistance"] as List? ?? [];
+
+    String assistanceDesc = "";
+    List<int> normCodes = [];
+
+    if (assistanceList.isNotEmpty) {
+      final normObj = assistanceList[0]["norm"] ?? {};
+      assistanceDesc = normObj["description"]?.toString() ?? "";
+
+      if (normObj["normCode"] != null) {
+        normCodes.add(normObj["normCode"]);
+      }
+    }
+
+    final docsList = json["documents"] as List? ?? [];
+
     return ExGratiaBeneficiary(
-      beneficiaryName: json['beneficiaryName'] ?? '',
-      beneficiaryId: json['beneficiaryId'] ?? '',
-      formId: json['formId'] ?? '',
-      village: json['village'] ?? '',
-      gender: json['gender'] ?? '',
-      age: json['age'] ?? '',
-      blockCode: json['blockCode'] ?? 0,
-      villageCode: json['villageCode'] ?? '',
-      bankName: json['bankName'] ?? '',
-      bankId: json['bankId'] ?? 0,
-      branchName: json['branchName'] ?? '',
-      branchId: json['branchId'] ?? 0,
-      bankCode: json['bankCode'],
-      branchCode: json['branchCode'] ?? '',
-      ifscCode: json['ifscCode'] ?? '',
-      accountNumber: json['accountNumber'] ?? '',
-      amount: json['amount'] ?? 0,
-      block: json['block'] ?? '',
-      district: json['district'] ?? '',
-      dateOfIncidence: json['dateOfIncidence'] ?? '',
-      calamity: json['calamity'] ?? '',
-      victimName: json['victimName'],
-      remarks: json['remarks'] ?? '',
-      assistance: json['assistance'] ?? '',
-      normCode: List<int>.from(json['normCode'] ?? []),
-      reportId: json['reportId'] ?? '',
-      landArea: (json['landArea'] ?? 0).toDouble(),
-      cropArea: (json['cropArea'] ?? 0).toDouble(),
-      landHoldingArea: (json['landHoldingArea'] ?? 0).toDouble(),
-      numberOfVictims: json['numberOfVictims'] ?? 0,
-      countVillagePeople: (json['countVillagePeople'] as List? ?? [])
-          .map((e) => CountVillagePeople.fromJson(e))
-          .toList(),
-      documents: (json['documents'] as List? ?? [])
+      beneficiaryName:
+          beneficiaryObj["beneficiary_name"]?.toString() ?? "",
+
+      beneficiaryId:
+          beneficiaryObj["beneficiaryId"]?.toString() ?? "",
+
+      formId: json["housingId"]?.toString() ?? "",
+
+      village: villageObj["villagename"]?.toString() ?? "",
+
+      gender: beneficiaryObj["gender"]?.toString() ?? "",
+      age: beneficiaryObj["age_category"]?.toString() ?? "",
+
+      blockCode: villageObj["blockCode"] ?? 0,
+      villageCode: villageObj["villagecode"]?.toString() ?? "",
+
+      bankName: "",
+      bankId: 0,
+
+      branchName: "",
+      branchId: 0,
+
+      bankCode: null,
+
+      branchCode: beneficiaryObj["branch_code"]?.toString() ?? "",
+      ifscCode: beneficiaryObj["ifsc"]?.toString() ?? "",
+      accountNumber: beneficiaryObj["ac_number"]?.toString() ?? "",
+
+      amount: json["amount"] ?? 0,
+
+      block: "",
+      district: "",
+
+      dateOfIncidence: "",
+      calamity: "",
+
+      victimName: null,
+
+      remarks: json["remarks"]?.toString() ?? "",
+
+      assistance: assistanceDesc,
+
+      normCode: normCodes,
+
+      reportId: json["assistanceHeadCode"]?.toString() ?? "",
+
+      landArea: 0,
+      cropArea: 0,
+      landHoldingArea: 0,
+      numberOfVictims: 0,
+
+      countVillagePeople: [],
+
+      documents: docsList
           .map((e) => BeneficiaryDocument.fromJson(e))
           .toList(),
-      draftProposal: json['draftProposal'] ?? false,
+
+      draftProposal: false,
     );
   }
 
-  /// ✅ helper
   bool get hasAllDocuments => documents.isNotEmpty;
 }

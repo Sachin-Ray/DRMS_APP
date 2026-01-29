@@ -9,17 +9,22 @@ class BeneficiaryDetails {
   String? village;
 
   Map<String, dynamic> toJson() => {
-    "name": name,
-    "ageCategory": ageCategory,
-    "gender": gender,
-    "blockCode": blockCode,
-    "village": village,
-  };
+        "name": name,
+        "ageCategory": ageCategory,
+        "gender": gender,
+        "blockCode": blockCode,
+        "village": village,
+      };
 }
 
 class AssistanceDetails {
   int? normCode;
+
+  /// Single assistance type (used in Agriculture etc.)
   String? assistanceType;
+
+  /// ✅ Multiple assistance types (used in Fishery Boat + Net)
+  List<String> assistanceTypeList = [];
 
   // Agriculture specific
   String? landHolding;
@@ -30,8 +35,8 @@ class AssistanceDetails {
   // Live amount notifier
   ValueNotifier<double> amountNotifier = ValueNotifier(0);
 
-   List<int> get selectedNormCodes =>
-      normCode != null ? [normCode!] : [];
+  /// Selected Norm Codes
+  List<int> get selectedNormCodes => normCode != null ? [normCode!] : [];
 
   // Victim names list
   List<String> victimNames = [];
@@ -39,14 +44,20 @@ class AssistanceDetails {
   String? remarks;
 
   Map<String, dynamic> toJson() => {
-    "normCode": normCode,
-    "assistanceType": assistanceType,
-    "landHolding": landHolding,
-    "victimCount": victimCount,
-    "amount": amountNotifier.value,
-    "victimNames": victimNames,
-    "remarks": remarks,
-  };
+        "normCode": normCode,
+
+        // Single type
+        "assistanceType": assistanceType,
+
+        // ✅ Multi type (Fishery)
+        "assistanceTypeList": assistanceTypeList,
+
+        "landHolding": landHolding,
+        "victimCount": victimCount,
+        "amount": amountNotifier.value,
+        "victimNames": victimNames,
+        "remarks": remarks,
+      };
 }
 
 class BankDetails {
@@ -57,11 +68,11 @@ class BankDetails {
   String? confirmAccountNumber;
 
   Map<String, dynamic> toJson() => {
-    "ifsc": ifsc,
-    "bankName": bankName,
-    "branchCode": branchCode,
-    "accountNumber": accountNumber,
-  };
+        "ifsc": ifsc,
+        "bankName": bankName,
+        "branchCode": branchCode,
+        "accountNumber": accountNumber,
+      };
 }
 
 class BeneficiaryDocuments {

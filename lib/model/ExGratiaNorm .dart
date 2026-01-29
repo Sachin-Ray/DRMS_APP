@@ -30,7 +30,7 @@ class ExGratiaNorm {
 
   factory ExGratiaNorm.fromJson(Map<String, dynamic> json) {
     return ExGratiaNorm(
-      normCode: json['normCode'],
+      normCode: json['normCode']??0,
       description: json['description'] ?? '',
       losstype: json['losstype'] ?? '',
       option: json['option'] ?? '',

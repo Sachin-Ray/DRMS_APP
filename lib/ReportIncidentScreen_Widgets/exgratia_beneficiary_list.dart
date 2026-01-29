@@ -38,9 +38,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     return isMobile ? _mobileView(context) : _tableView(context);
   }
 
-  // =====================================================
-  // 🖥️ DESKTOP TABLE VIEW
-
   Widget _tableView(BuildContext context) {
     return Column(
       children: [
@@ -254,9 +251,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 
-  // =====================================================
-  // ✅ FETCH BASE64 DOC
-
   Future<Map<String, dynamic>> _fetchBase64Doc(String docCode) async {
     final url = "$_docApiBase?doc=$docCode";
 
@@ -265,8 +259,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     return response.data["data"];
   }
 
-  // =====================================================
-  // ✅ CLEAN BASE64
 
   Uint8List _decodeBase64(String base64String) {
     return base64Decode(
@@ -278,9 +270,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
           .last,
     );
   }
-
-  // =====================================================
-  // DOCUMENT OPTIONS MODAL
 
   void _showDocOptions(BuildContext context, doc) {
     showModalBottomSheet(
@@ -325,8 +314,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 
-  // =====================================================
-  // ✅ PREVIEW BASE64
 
   Future<void> _previewBase64(BuildContext context, String docCode) async {
     final data = await _fetchBase64Doc(docCode);
@@ -370,9 +357,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     }
   }
 
-  // =====================================================
-  // ✅ DOWNLOAD BASE64
-
   Future<void> _downloadBase64(BuildContext context, String docCode) async {
     final data = await _fetchBase64Doc(docCode);
 
@@ -401,9 +385,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
 
     await OpenFilex.open(savePath);
   }
-
-  // =====================================================
-  // HELPERS
 
   Widget _cell(String text, int flex) =>
       Expanded(flex: flex, child: Text(text));
@@ -498,7 +479,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
   }
 }
 
-// =====================================================
 class _HCell extends StatelessWidget {
   final String text;
   final int flex;

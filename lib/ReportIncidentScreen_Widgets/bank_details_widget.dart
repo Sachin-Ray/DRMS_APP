@@ -68,6 +68,7 @@ class _BankDetailsWidgetState extends State<BankDetailsWidget> {
           controller: ifscController,
           decoration: _input("Enter IFSC Code"),
           onChanged: (v) {
+            ifscController.text = v.toUpperCase();
             widget.model.ifsc = v;
             fetchBankDetails(v);
           },
@@ -96,7 +97,6 @@ class _BankDetailsWidgetState extends State<BankDetailsWidget> {
           decoration: _input(loading ? "Loading..." : "Select Branch"),
 
           items: branches.map((b) {
-            // ✅ Show only name before "-"
             String displayName = b.branchCode.split("-").first;
 
             return DropdownMenuItem<BankBranch>(
@@ -109,9 +109,7 @@ class _BankDetailsWidgetState extends State<BankDetailsWidget> {
             setState(() {
               selectedBranch = v;
 
-              // ✅ Store full branchCode
               widget.model.branchCode = v?.branchCode;
-
             });
           },
 
@@ -129,7 +127,7 @@ class _BankDetailsWidgetState extends State<BankDetailsWidget> {
           decoration: _input("Enter account number"),
           onChanged: (v) {
             widget.model.accountNumber = v;
-            setState(() {}); // refresh match message
+            setState(() {});
           },
           validator: (v) {
             if (v == null || v.isEmpty) {
@@ -138,10 +136,18 @@ class _BankDetailsWidgetState extends State<BankDetailsWidget> {
             if (v.length < 6) {
               return "Account number is too short";
             }
+            if (!RegExp(r'^[0-9]+$').hasMatch(v)) {
+              return "Account number should be numeric";
+            }
             return null;
           },
         ),
-
+         const SizedBox(height: 6),
+         if (!RegExp(r'^[0-9]+$').hasMatch(confirmAccountController.text))
+            const Text(
+            "❌ Account numbers should be numeric",
+            style: TextStyle(color: Colors.green, fontSize: 12),
+          ),
         const SizedBox(height: 16),
 
         _required("Verify Bank A/C Number"),
@@ -164,11 +170,20 @@ class _BankDetailsWidgetState extends State<BankDetailsWidget> {
               return "Account number does not match";
             }
 
+            if (!RegExp(r'^[0-9]+$').hasMatch(v)) {
+              return "Account number should be numeric";
+            }
+
             return null;
           },
         ),
 
         const SizedBox(height: 6),
+        if (!RegExp(r'^[0-9]+$').hasMatch(accountController.text))
+            const Text(
+            "❌ Account numbers should be numeric",
+            style: TextStyle(color: Colors.green, fontSize: 12),
+          ),
 
         if (confirmAccountController.text.isNotEmpty &&
             confirmAccountController.text != accountController.text)
@@ -183,6 +198,8 @@ class _BankDetailsWidgetState extends State<BankDetailsWidget> {
             "✅ Account numbers match",
             style: TextStyle(color: Colors.green, fontSize: 12),
           ),
+         
+          
       ],
     );
   }
