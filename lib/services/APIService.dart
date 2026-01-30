@@ -268,6 +268,7 @@ class APIService {
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
+        debugPrint("ExGratia Beneficiary Response: $decoded");
 
         if (decoded is Map && decoded["status"] == "SUCCESS") {
           final mainData = decoded["data"];
@@ -520,5 +521,101 @@ Future<bool> uploadBeneficiaryDocuments({
 
   return false;
 }
+
+Future<List<Map<String, dynamic>>> getAnimalSubtypeByAnimalType(
+    String animalType) async {
+  try {
+    final response = await CustomHTTPRequest().get(
+      "${drmsURL}getanimalsubtypebyanimaltype?animalType=$animalType",
+    );
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      debugPrint(" decoded Animal Subtype: $decoded");
+
+      if (decoded is Map &&
+            decoded["status"] == "SUCCESS" &&
+            decoded["data"] is List) {
+          return List<Map<String, dynamic>>.from(decoded["data"]);
+      }
+    }
+  } catch (e) {
+    debugPrint("Animal Subtype Fetch Error: $e");
+  }
+
+  return [];
+}
+
+Future<int?> getNormCodeByAssistanceType(String subtype) async {
+  try {
+    final response = await CustomHTTPRequest().get(
+      "${drmsURL}getnormcodebyassistancetype?assistanceType=$subtype",
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return json["data"];
+    }
+  } catch (e) {
+    debugPrint("NormCode API Error: $e");
+  }
+  return null;
+}
+
+Future<List<Map<String, dynamic>>> getHouseSubtypeByHouseType({
+  required String subType,
+  required String houseType,
+}) async {
+  try {
+    final response = await CustomHTTPRequest().get(
+      "${drmsURL}getbysubtypeandhousetype?subType=$subType&houseType=$houseType",
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+
+      return List<Map<String, dynamic>>.from(json["data"]);
+    }
+
+    return [];
+  } catch (e) {
+    debugPrint("❌ House Subtype API Error: $e");
+    return [];
+  }
+}
+
+// ======================================================
+// ✅ GET NORM CODE FOR HOUSING (SUBTYPE8)
+// ======================================================
+Future<int?> getNormCodeByHousingAssistType(String assistanceType) async {
+  try {
+    final response = await CustomHTTPRequest().get(
+      "${drmsURL}getnormcodebyassistancetypeforhousing?assistanceType=$assistanceType",
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+
+      // ✅ API returns normCode inside data
+      final data = json["data"];
+
+      if (data != null && data is int) {
+        return data;
+      }
+
+      if (data != null && data is String) {
+        return int.tryParse(data);
+      }
+    }
+
+    return null;
+  } catch (e) {
+    debugPrint("❌ Housing NormCode API Error: $e");
+    return null;
+  }
+}
+
+
+
 
 }

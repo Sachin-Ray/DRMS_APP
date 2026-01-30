@@ -1,7 +1,9 @@
 import 'package:drms/ReportIncidentScreen_Widgets/add_agriculture_beneficiary_dialog.dart';
+import 'package:drms/ReportIncidentScreen_Widgets/add_animal_husbandry_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/add_fishery_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/add_gr_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/add_handloom_beneficiary_dialog.dart';
+import 'package:drms/ReportIncidentScreen_Widgets/add_housing_damage_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/exgratia_beneficiary_list.dart';
 import 'package:drms/app_scaffold.dart';
 import 'package:drms/model/ExGratiaBeneficiary.dart';
@@ -479,6 +481,22 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
           return AddFisheryBeneficiaryDialog(
             blocks: [],
             villages: [], firNo: '$selectedPR',
+          );
+        }
+
+        if(widget.categoryTitle == "Animal Husbandry") {
+          return AddAnimalHusbandryBeneficiaryDialog(
+            blocks: [],
+            villages: [],
+            firNo: selectedPR!,
+          );
+        }
+
+        if(widget.categoryTitle == "Housing Damage") {
+          return AddHousingDamageBeneficiaryDialog(
+            blocks: [],
+            villages: [],
+            firNo: selectedPR!,
           );
         }
 

@@ -136,18 +136,12 @@ class _BankDetailsWidgetState extends State<BankDetailsWidget> {
             if (v.length < 6) {
               return "Account number is too short";
             }
-            if (!RegExp(r'^[0-9]+$').hasMatch(v)) {
+            if (v.isNotEmpty && !RegExp(r'^[0-9]+$').hasMatch(v)) {
               return "Account number should be numeric";
             }
             return null;
           },
         ),
-         const SizedBox(height: 6),
-         if (!RegExp(r'^[0-9]+$').hasMatch(confirmAccountController.text))
-            const Text(
-            "❌ Account numbers should be numeric",
-            style: TextStyle(color: Colors.green, fontSize: 12),
-          ),
         const SizedBox(height: 16),
 
         _required("Verify Bank A/C Number"),
@@ -179,11 +173,6 @@ class _BankDetailsWidgetState extends State<BankDetailsWidget> {
         ),
 
         const SizedBox(height: 6),
-        if (!RegExp(r'^[0-9]+$').hasMatch(accountController.text))
-            const Text(
-            "❌ Account numbers should be numeric",
-            style: TextStyle(color: Colors.green, fontSize: 12),
-          ),
 
         if (confirmAccountController.text.isNotEmpty &&
             confirmAccountController.text != accountController.text)

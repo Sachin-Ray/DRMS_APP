@@ -204,12 +204,14 @@ final List<ProposalCategory> _categories = [
     route: '/gratuity_relief',
     assistanceHeadCode: "AH-GR",
   ),
-  // ProposalCategory(
-  //   icon: Icons.pets_rounded,
-  //   title: "Animal Husbandry",
-  //   description:
-  //       "Assistance for livestock loss, feed, medicines, and cattle camps.",
-  // ),
+  ProposalCategory(
+    icon: Icons.pets_rounded,
+    title: "Animal Husbandry",
+    description:
+        "Assistance for livestock loss, feed, medicines, and cattle camps.",
+    route: '/animal_husbandry',
+    assistanceHeadCode: "AH-LS",
+  ),
   // ProposalCategory(
   //   icon: Icons.health_and_safety_rounded,
   //   title: "Relief Measures",
@@ -235,7 +237,7 @@ final List<ProposalCategory> _categories = [
     title: "Handloom & Handicrafts",
     description: "Aid for damaged tools, materials, and artisan equipment.",
     route: '/handloom_handicrafts',
-    assistanceHeadCode: "AH-HU",
+    assistanceHeadCode: "AH-HD",
   ),
   ProposalCategory(
     icon: Icons.house_rounded,
@@ -243,7 +245,7 @@ final List<ProposalCategory> _categories = [
     description:
         "Support for fully or partially damaged houses and cattle sheds.",
     route: '/housing_damage',
-    assistanceHeadCode: "AH-HD",
+    assistanceHeadCode: "AH-HU",
   ),
   // ProposalCategory(
   //   icon: Icons.apartment_rounded,

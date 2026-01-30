@@ -3,27 +3,27 @@ import 'dart:io';
 
 import 'package:drms/ReportIncidentScreen_Widgets/accordion_section.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/amount_widget.dart';
-import 'package:drms/ReportIncidentScreen_Widgets/assistance_widget.dart';
+import 'package:drms/ReportIncidentScreen_Widgets/animal_husbandry_assistance_widget.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/bank_details_widget.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/beneficiary_details_widget.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/remarks_widget.dart';
 
-import 'package:drms/model/beneficiary_models.dart';
 import 'package:drms/model/Block.dart';
 import 'package:drms/model/RequiredDocument.dart';
 import 'package:drms/model/Village.dart';
+import 'package:drms/model/beneficiary_models.dart';
 import 'package:drms/services/APIService.dart';
 
-import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:mime/mime.dart';
 
-class AddBeneficiaryDialog extends StatefulWidget {
+class AddAnimalHusbandryBeneficiaryDialog extends StatefulWidget {
   final List<Block> blocks;
   final List<Village> villages;
   final String firNo;
 
-  const AddBeneficiaryDialog({
+  const AddAnimalHusbandryBeneficiaryDialog({
     super.key,
     required this.blocks,
     required this.villages,
@@ -31,16 +31,20 @@ class AddBeneficiaryDialog extends StatefulWidget {
   });
 
   @override
-  State<AddBeneficiaryDialog> createState() => _AddBeneficiaryDialogState();
+  State<AddAnimalHusbandryBeneficiaryDialog> createState() =>
+      _AddAnimalHusbandryBeneficiaryDialogState();
 }
 
-class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
+class _AddAnimalHusbandryBeneficiaryDialogState
+    extends State<AddAnimalHusbandryBeneficiaryDialog> {
   final _formKey = GlobalKey<FormState>();
 
+  // MODELS
   final BeneficiaryDetails beneficiary = BeneficiaryDetails();
   final AssistanceDetails assistance = AssistanceDetails();
   final BankDetails bank = BankDetails();
 
+  // Accordion States
   bool b1 = true;
   bool b2 = false;
   bool b3 = false;
@@ -52,12 +56,11 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
   bool uploadingDocs = false;
 
   bool freezeForm = false;
+  bool showRequiredDocs = false;
 
   String? generatedBeneficiaryId;
 
-  bool showRequiredDocs = false;
   List<RequiredDocument> requiredDocs = [];
-
   Map<int, File?> uploadedDocs = {};
 
   @override
@@ -66,58 +69,14 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     super.dispose();
   }
 
-  // ==========================================================
-  // CONFIRMATION DIALOG
-  // ==========================================================
-  Future<bool?> _showConfirmDialog() {
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text("Confirmation"),
-        content: const Text(
-          "Are you sure you want to save beneficiary details?\n"
-          "After saving, you can upload enclosures.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("NO"),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("YES"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showErrorDialog(String msg) {
-    return showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Error"),
-        content: Text(msg),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
-  }
-
+  // ======================================================
+  // SUBMIT BENEFICIARY
+  // ======================================================
   Future<void> _submitBeneficiary() async {
     if (!_formKey.currentState!.validate()) {
       setState(() => b1 = true);
       return;
     }
-
-    final confirm = await _showConfirmDialog();
-    if (confirm != true) return;
 
     setState(() => isSubmitting = true);
 
@@ -127,17 +86,25 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
       "gender": beneficiary.gender,
       "blockcode": beneficiary.blockCode,
       "villagecode": beneficiary.village,
+
+      // FIR
+      "firNo": widget.firNo,
+
+      // ✅ Animal Husbandry Assistance Head
+      "assistanceHead": "AH-AH",
+
+      // Norm Selected
+      "normSelect": [assistance.normCode],
+
+      // Bank
       "ifsc": bank.ifsc,
       "bankName": bank.bankName,
       "branchCode": bank.branchCode,
       "acNumber": bank.accountNumber,
+
+      // Remarks
       "remarks": assistance.remarks,
-      "firNo": widget.firNo,
-      "assistanceHead": "AH-GR",
-      "normSelect": [assistance.normCode],
-      "victimNames": assistance.victimNames,
     };
-    debugPrint("Submitting Beneficiary Payload: $payload");
 
     final result = await APIService.instance.submitSaveAssistanceForm(payload);
 
@@ -146,8 +113,9 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     if (result != null && result["status"] == "SUCCESS") {
       generatedBeneficiaryId = result["data"]["body"].toString().trim();
 
-      debugPrint("✅ Beneficiary ID Generated: $generatedBeneficiaryId");
+      debugPrint("✅ Animal Husbandry Beneficiary ID: $generatedBeneficiaryId");
 
+      // Fetch Required Docs
       requiredDocs = await APIService.instance.fetchDocuments(
         assistance.normCode!,
         widget.firNo,
@@ -168,11 +136,14 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
         ),
       );
     } else {
-      _showErrorDialog("Submission failed. Please try again.");
+      _showError("Submission Failed");
     }
   }
 
-  Future<void> _pickFile(int documentCode) async {
+  // ======================================================
+  // PICK FILE
+  // ======================================================
+  Future<void> _pickFile(int docCode) async {
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
@@ -180,19 +151,22 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
 
     if (picked != null && picked.files.single.path != null) {
       setState(() {
-        uploadedDocs[documentCode] = File(picked.files.single.path!);
+        uploadedDocs[docCode] = File(picked.files.single.path!);
       });
     }
   }
 
+  // ======================================================
+  // UPLOAD ENCLOSURES
+  // ======================================================
   Future<void> _uploadEnclosures() async {
     if (generatedBeneficiaryId == null) {
-      _showErrorDialog("Beneficiary ID not found.");
+      _showError("Beneficiary ID not found.");
       return;
     }
 
     if (uploadedDocs.isEmpty) {
-      _showErrorDialog("Please upload at least one enclosure.");
+      _showError("Please upload at least one document.");
       return;
     }
 
@@ -201,24 +175,22 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     List<Map<String, dynamic>> docsPayload = [];
 
     for (final entry in uploadedDocs.entries) {
-      final documentCode = entry.key;
+      final docCode = entry.key;
       final file = entry.value!;
 
       final doc = requiredDocs.firstWhere(
-        (d) => d.documentCode == documentCode,
+        (d) => d.documentCode == docCode,
       );
 
       final bytes = await file.readAsBytes();
-
-      final mimeType = lookupMimeType(file.path) ?? "application/octet-stream";
+      final mimeType =
+          lookupMimeType(file.path) ?? "application/octet-stream";
 
       docsPayload.add({
         "filename": doc.documentName,
-
         "contentType": mimeType,
-
         "base64Data": base64Encode(bytes),
-
+        "documentType": "ENCLOSURE",
         "documentCode": doc.documentCode,
       });
     }
@@ -231,18 +203,41 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     setState(() => uploadingDocs = false);
 
     if (success) {
+      Navigator.pop(context);
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("✅ Beneficiary + Enclosures Uploaded Successfully"),
+          content: Text("✅ Enclosures Uploaded Successfully"),
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pop(context);
     } else {
-      _showErrorDialog("Upload failed. Please try again.");
+      _showError("Upload Failed");
     }
   }
 
+  // ======================================================
+  // ERROR POPUP
+  // ======================================================
+  void _showError(String msg) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Error"),
+        content: Text(msg),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          )
+        ],
+      ),
+    );
+  }
+
+  // ======================================================
+  // UI BUILD
+  // ======================================================
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -260,13 +255,15 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                 padding: const EdgeInsets.all(16),
                 decoration: const BoxDecoration(
                   color: Color(0xff001E3C),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                 ),
                 child: Row(
                   children: [
                     const Expanded(
                       child: Text(
-                        "Add Beneficiary",
+                        "Add Animal Husbandry Beneficiary",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -277,7 +274,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white),
                       onPressed: () => Navigator.pop(context),
-                    ),
+                    )
                   ],
                 ),
               ),
@@ -288,7 +285,6 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      // ✅ FORM SECTION (Frozen after Save)
                       AbsorbPointer(
                         absorbing: freezeForm,
                         child: Column(
@@ -302,37 +298,50 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                                   model: beneficiary,
                                   blocks: widget.blocks,
                                   villages: widget.villages,
-                                ),
+                                )
                               ],
                             ),
+
                             AccordionSection(
                               title: "Select Assistance",
                               expanded: b2,
                               onToggle: () => setState(() => b2 = !b2),
-                              children: [AssistanceWidget(model: assistance)],
+                              children: [
+                                AnimalHusbandryAssistanceWidget(model:assistance),
+                              ],
                             ),
+
                             AccordionSection(
                               title: "Amount Eligible",
                               expanded: b3,
                               onToggle: () => setState(() => b3 = !b3),
-                              children: [AmountWidget(model: assistance)],
+                              children: [
+                                AmountWidget(model: assistance),
+                              ],
                             ),
+
                             AccordionSection(
                               title: "Bank Account Details",
                               expanded: b4,
                               onToggle: () => setState(() => b4 = !b4),
-                              children: [BankDetailsWidget(model: bank)],
+                              children: [
+                                BankDetailsWidget(model: bank),
+                              ],
                             ),
+
                             AccordionSection(
                               title: "Remarks",
                               expanded: b6,
                               onToggle: () => setState(() => b6 = !b6),
-                              children: [RemarksWidget(model: assistance)],
+                              children: [
+                                RemarksWidget(model: assistance),
+                              ],
                             ),
                           ],
                         ),
                       ),
 
+                      // ================= UPLOAD SECTION =================
                       if (showRequiredDocs)
                         AccordionSection(
                           title: "Upload Enclosures",
@@ -344,7 +353,6 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                                 final file = uploadedDocs[doc.documentCode];
 
                                 return Card(
-                                  elevation: 1,
                                   child: ListTile(
                                     title: Text(doc.documentName),
                                     subtitle: file == null
@@ -367,7 +375,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                               }).toList(),
                             ),
 
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 16),
 
                             ElevatedButton.icon(
                               icon: const Icon(Icons.cloud_upload),
@@ -380,19 +388,13 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                                 ),
                               ),
                               label: uploadingDocs
-                                  ? const SizedBox(
-                                      height: 18,
-                                      width: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
                                     )
                                   : const Text("Upload Enclosures"),
-                              onPressed: uploadingDocs
-                                  ? null
-                                  : _uploadEnclosures,
-                            ),
+                              onPressed:
+                                  uploadingDocs ? null : _uploadEnclosures,
+                            )
                           ],
                         ),
                     ],
@@ -400,7 +402,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                 ),
               ),
 
-              // ================= FOOTER BUTTONS =================
+              // ================= FOOTER =================
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -412,27 +414,21 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                       ),
                     ),
                     const SizedBox(width: 12),
-
-                    // ✅ Save Button Hidden After Freeze
                     if (!freezeForm)
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: isSubmitting ? null : _submitBeneficiary,
+                          onPressed:
+                              isSubmitting ? null : _submitBeneficiary,
                           child: isSubmitting
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
                                 )
-                              : const Text("Save Beneficiary Details"),
+                              : const Text("Save Beneficiary"),
                         ),
                       ),
                   ],
                 ),
-              ),
+              )
             ],
           ),
         ),
