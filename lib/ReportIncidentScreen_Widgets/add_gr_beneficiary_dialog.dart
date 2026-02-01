@@ -36,12 +36,13 @@ class AddBeneficiaryDialog extends StatefulWidget {
 
 class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
   final _formKey = GlobalKey<FormState>();
+  final ScrollController _scrollController = ScrollController();
 
   final BeneficiaryDetails beneficiary = BeneficiaryDetails();
   final AssistanceDetails assistance = AssistanceDetails();
   final BankDetails bank = BankDetails();
 
-  bool b1 = true, b2 = false, b3 = false, b4 = false, b5 = false, b6 = false;
+  bool b1 = true, b2 = true, b3 = true, b4 = true, b5 = true, b6 = true;
 
   bool isSubmitting = false;
   bool uploadingDocs = false;
@@ -56,8 +57,6 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
 
   Map<int, File?> uploadedDocs = {};
 
-  final ScrollController _scrollController = ScrollController();
-
   @override
   void dispose() {
     assistance.amountNotifier.dispose();
@@ -66,7 +65,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
   }
 
   // ==========================================================
-  // CONFIRM SAVE
+  // CONFIRMATION DIALOG
   // ==========================================================
   Future<bool?> _showConfirmDialog() {
     return showDialog<bool>(
@@ -77,7 +76,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
         title: const Text("Confirmation"),
         content: const Text(
           "Are you sure you want to save beneficiary details?\n"
-          "After saving, you must upload all mandatory enclosures.",
+          "After saving, you must upload all enclosures.",
         ),
         actions: [
           TextButton(
@@ -152,25 +151,22 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
         widget.firNo,
       );
 
-      // ✅ SHOW UPLOAD SECTION + MESSAGE
       setState(() {
         freezeForm = true;
         beneficiarySaved = true;
 
         showRequiredDocs = true;
-
-        // ✅ Auto Expand Upload Accordion
         b5 = true;
       });
 
-      // ✅ Scroll user automatically to Upload Section
-      Future.delayed(const Duration(milliseconds: 300), () {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      });
+      // ✅ Scroll to upload section
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOut,
+      );
     } else {
       _showErrorDialog("Submission failed. Please try again.");
     }
@@ -182,7 +178,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
   Future<void> _pickFile(int documentCode) async {
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
     );
 
     if (picked != null && picked.files.single.path != null) {
@@ -193,19 +189,21 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
   }
 
   // ==========================================================
-  // UPLOAD DOCUMENTS (MANDATORY)
+  // CHECK IF ALL REQUIRED DOCS UPLOADED
+  // ==========================================================
+  bool get allDocsUploaded {
+    return requiredDocs.every((doc) => uploadedDocs[doc.documentCode] != null);
+  }
+
+  // ==========================================================
+  // UPLOAD ENCLOSURES
   // ==========================================================
   Future<void> _uploadEnclosures() async {
-    if (generatedBeneficiaryId == null) return;
-
-    // ✅ Mandatory check
-    for (final doc in requiredDocs) {
-      if (uploadedDocs[doc.documentCode] == null) {
-        _showErrorDialog(
-          "All documents are mandatory.\nPlease upload: ${doc.documentName}",
-        );
-        return;
-      }
+    if (!allDocsUploaded) {
+      _showErrorDialog(
+        "All enclosures are mandatory. Please upload all files.",
+      );
+      return;
     }
 
     setState(() => uploadingDocs = true);
@@ -214,7 +212,6 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
 
     for (final doc in requiredDocs) {
       final file = uploadedDocs[doc.documentCode]!;
-
       final bytes = await file.readAsBytes();
       final mimeType = lookupMimeType(file.path) ?? "application/octet-stream";
 
@@ -234,28 +231,31 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     setState(() => uploadingDocs = false);
 
     if (success) {
-      Navigator.pop(context, true); // ✅ update list
+      Navigator.pop(context, true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("✅ Beneficiary + Enclosures Uploaded Successfully"),
+          backgroundColor: Colors.green,
+        ),
+      );
     } else {
       _showErrorDialog("Upload failed. Please try again.");
     }
   }
 
-  // ==========================================================
-  // UI
-  // ==========================================================
   @override
   Widget build(BuildContext context) {
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.92,
+        width: MediaQuery.of(context).size.width * 0.9,
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // HEADER
+              // ================= HEADER =================
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: const BoxDecoration(
@@ -282,33 +282,39 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                 ),
               ),
 
-              // BODY
+              // ================= BODY =================
               Flexible(
                 child: SingleChildScrollView(
                   controller: _scrollController,
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      // ✅ Success Banner
+                      // ✅ SUCCESS BANNER
                       if (beneficiarySaved)
                         Container(
                           width: double.infinity,
-                          margin: const EdgeInsets.only(bottom: 16),
+                          margin: const EdgeInsets.only(bottom: 14),
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.12),
+                            color: Colors.green.shade50,
                             borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.green.shade300),
                           ),
                           child: Row(
-                            children: const [
-                              Icon(Icons.check_circle, color: Colors.green),
-                              SizedBox(width: 10),
+                            children: [
+                              const Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 22,
+                              ),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  "Beneficiary Saved Successfully! Please upload mandatory enclosures below.",
+                                  "Beneficiary Saved Successfully! Upload all mandatory enclosures below.",
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.green,
+                                    fontSize: 13,
+                                    color: Colors.green.shade800,
                                   ),
                                 ),
                               ),
@@ -316,7 +322,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                           ),
                         ),
 
-                      // FORM SECTION
+                      // ✅ FORM SECTION
                       AbsorbPointer(
                         absorbing: freezeForm,
                         child: Column(
@@ -361,7 +367,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                         ),
                       ),
 
-                      // UPLOAD SECTION
+                      // ================= UPLOAD ENCLOSURES =================
                       if (showRequiredDocs)
                         AccordionSection(
                           title: "Upload Enclosures (Mandatory)",
@@ -373,14 +379,16 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                                 final file = uploadedDocs[doc.documentCode];
 
                                 return Card(
+                                  elevation: 1,
                                   child: ListTile(
-                                    title: Text(doc.documentName),
+                                    title: Text("${doc.documentName} *"),
                                     subtitle: file == null
                                         ? const Text("No file selected")
                                         : Text(
                                             file.path.split("/").last,
                                             style: const TextStyle(
                                               color: Colors.green,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                     trailing: ElevatedButton(
@@ -395,23 +403,34 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                               }).toList(),
                             ),
 
-                            const SizedBox(height: 18),
+                            const SizedBox(height: 20),
 
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 icon: const Icon(Icons.cloud_upload),
-                                label: uploadingDocs
-                                    ? const CircularProgressIndicator(
-                                        color: Colors.white,
-                                      )
-                                    : const Text("Upload All Documents"),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 14,
                                   ),
                                 ),
+                                label: uploadingDocs
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        "Upload All Enclosures",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                 onPressed: uploadingDocs
                                     ? null
                                     : _uploadEnclosures,
@@ -424,20 +443,39 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                 ),
               ),
 
-              // SAVE BUTTON FOOTER
-              if (!freezeForm)
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: isSubmitting ? null : _submitBeneficiary,
-                      child: isSubmitting
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text("Save Beneficiary Details"),
-                    ),
-                  ),
+              // ================= FOOTER =================
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    if (!freezeForm)
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: isSubmitting ? null : _submitBeneficiary,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: isSubmitting
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  "Save Beneficiary Details",
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                        ),
+                      ),
+                  ],
                 ),
+              ),
             ],
           ),
         ),

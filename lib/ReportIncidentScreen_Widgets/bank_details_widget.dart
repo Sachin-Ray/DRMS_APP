@@ -84,7 +84,7 @@ class _BankDetailsWidgetState extends State<BankDetailsWidget> {
         TextFormField(
           controller: bankNameController,
           readOnly: true,
-          decoration: _input("Auto Bank Name"),
+          decoration: _input(loading ? "Loading..." : "Auto Bank Name"),
         ),
 
         const SizedBox(height: 16),
@@ -187,8 +187,6 @@ class _BankDetailsWidgetState extends State<BankDetailsWidget> {
             "✅ Account numbers match",
             style: TextStyle(color: Colors.green, fontSize: 12),
           ),
-         
-          
       ],
     );
   }

@@ -238,8 +238,8 @@ class APIService {
     required String firNo,
     required String assistanceHead,
     String reportId = "",
-    int page = 1,
-    int size = 20,
+    required int page,
+    required int size,
   }) async {
     try {
       final response = await CustomHTTPRequest().get(

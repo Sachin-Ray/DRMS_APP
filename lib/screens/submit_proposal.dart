@@ -51,6 +51,7 @@ class SubmitProposalScreen extends StatelessWidget {
                         () => ProposalEntryScreen(
                           categoryTitle: item.title,
                           assistanceHead: item.assistanceHeadCode,
+                          icon: item.icon,
                         ),
                       );
                     },

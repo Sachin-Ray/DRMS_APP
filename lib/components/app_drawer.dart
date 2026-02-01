@@ -40,7 +40,6 @@ class _AppDrawerState extends State<AppDrawer> {
       backgroundColor: pageBg,
       child: Column(
         children: [
-
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -81,24 +80,23 @@ class _AppDrawerState extends State<AppDrawer> {
                             fontWeight: FontWeight.w700,
                           ),
                         );
-                      },      
+                      },
                     ),
                     SizedBox(height: 6),
                     Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         'Welcome back!',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 13),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -109,7 +107,6 @@ class _AppDrawerState extends State<AppDrawer> {
             child: ListView(
               padding: EdgeInsets.all(16),
               children: [
-
                 _modernDrawerTile(
                   icon: Icons.home_rounded,
                   label: 'Home',
@@ -209,19 +206,18 @@ class _AppDrawerState extends State<AppDrawer> {
                   },
                 ),
 
-                _modernDrawerTile(
-                  icon: Icons.person_rounded,
-                  label: 'Profile',
-                  route: 'profile',
-                  context: context,
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.of(context).pushReplacement(
-                      noAnimationRoute(ProfileScreen()),
-                    );
-                  },
-                ),
-
+                // _modernDrawerTile(
+                //   icon: Icons.person_rounded,
+                //   label: 'Profile',
+                //   route: 'profile',
+                //   context: context,
+                //   onTap: () {
+                //     Navigator.pop(context);
+                //     Navigator.of(context).pushReplacement(
+                //       noAnimationRoute(ProfileScreen()),
+                //     );
+                //   },
+                // ),
                 _modernDrawerTile(
                   icon: Icons.info_outline_rounded,
                   label: 'About',
@@ -229,9 +225,9 @@ class _AppDrawerState extends State<AppDrawer> {
                   context: context,
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.of(context).pushReplacement(
-                      noAnimationRoute(AboutScreen()),
-                    );
+                    Navigator.of(
+                      context,
+                    ).pushReplacement(noAnimationRoute(AboutScreen()));
                   },
                 ),
               ],
@@ -243,22 +239,19 @@ class _AppDrawerState extends State<AppDrawer> {
   }
 
   Widget _sectionLabel(String text) => Padding(
-        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.2,
-            color: Color(0xff9CA3AF),
-          ),
-        ),
-      );
+    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 1.2,
+        color: Color(0xff9CA3AF),
+      ),
+    ),
+  );
 
-  Widget _subMenuTile({
-    required String label,
-    required VoidCallback onTap,
-  }) {
+  Widget _subMenuTile({required String label, required VoidCallback onTap}) {
     return Container(
       margin: EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
@@ -342,7 +335,7 @@ class _AppDrawerState extends State<AppDrawer> {
                     turns: isExpanded ? 0.5 : 0,
                     duration: Duration(milliseconds: 250),
                     child: Icon(Icons.keyboard_arrow_down_rounded),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -390,10 +383,7 @@ class _AppDrawerState extends State<AppDrawer> {
               SizedBox(width: 14),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -402,4 +392,3 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 }
-

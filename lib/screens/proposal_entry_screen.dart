@@ -14,11 +14,13 @@ import 'package:table_calendar/table_calendar.dart';
 class ProposalEntryScreen extends StatefulWidget {
   final String categoryTitle;
   final String assistanceHead;
+  final IconData icon;
 
   const ProposalEntryScreen({
     super.key,
     required this.categoryTitle,
     required this.assistanceHead,
+    required this.icon,
   });
 
   @override
@@ -43,12 +45,27 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
   final List<DateTime> highlightedDates = [];
   final List<String> prList = [];
 
+  int currentPage = 1;
+  final int pageSize = 20;
+
+  bool hasMore = true;
+  bool isFetchingMore = false;
+
+  final TextEditingController _searchController = TextEditingController();
+  String searchQuery = "";
+
   DateTime _focusedDay = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _loadHighlightedDates();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadHighlightedDates() async {
@@ -66,21 +83,41 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
     if (mounted) setState(() => isLoadingDates = false);
   }
 
-  Future<void> _loadBeneficiaries() async {
+  Future<void> _loadBeneficiaries({bool loadMore = false}) async {
     if (selectedPR == null) return;
 
-    setState(() => isLoadingBeneficiaries = true);
+    if (loadMore) {
+      if (!hasMore || isFetchingMore) return;
+      setState(() => isFetchingMore = true);
+    } else {
+      setState(() {
+        isLoadingBeneficiaries = true;
+        beneficiaries.clear();
+        currentPage = 1;
+        hasMore = true;
+      });
+    }
 
     final list = await APIService.instance.getExGratiaFromFir(
       firNo: selectedPR!,
       assistanceHead: widget.assistanceHead,
+      page: currentPage,
+      size: pageSize,
     );
 
     if (!mounted) return;
 
     setState(() {
-      beneficiaries = list;
+      beneficiaries.addAll(list);
+
+      if (list.length < pageSize) {
+        hasMore = false;
+      } else {
+        currentPage++;
+      }
+
       isLoadingBeneficiaries = false;
+      isFetchingMore = false;
     });
   }
 
@@ -139,6 +176,16 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
       Navigator.pop(context);
       _pickDate();
     }
+  }
+
+  List<ExGratiaBeneficiary> get filteredBeneficiaries {
+    if (searchQuery.isEmpty) return beneficiaries;
+
+    return beneficiaries.where((b) {
+      return b.beneficiaryName.toLowerCase().contains(
+        searchQuery.toLowerCase(),
+      );
+    }).toList();
   }
 
   @override
@@ -552,6 +599,27 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
             ),
           ),
           const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: "Search Beneficiary Name...",
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: const Color(0xffF9FAFB),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Color(0xffE5E7EB)),
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
+            ),
+          ),
 
           if (isLoadingBeneficiaries)
             const Padding(
@@ -564,10 +632,35 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
               child: Text("No records found"),
             )
           else
-            ExGratiaBeneficiaryList(
-              list: beneficiaries,
-              onEdit: _editBeneficiary,
-              onDelete: _deleteBeneficiary,
+            Column(
+              children: [
+                ExGratiaBeneficiaryList(
+                  list: filteredBeneficiaries,
+                  onEdit: _editBeneficiary,
+                  onDelete: _deleteBeneficiary,
+                  icon: widget.icon,
+                ),
+
+                if (hasMore)
+                  Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: ElevatedButton(
+                      onPressed: isFetchingMore
+                          ? null
+                          : () => _loadBeneficiaries(loadMore: true),
+                      child: isFetchingMore
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text("Load More"),
+                    ),
+                  ),
+              ],
             ),
         ],
       ),

@@ -7,18 +7,19 @@ import 'package:drms/model/ExGratiaBeneficiary.dart';
 import 'package:flutter/material.dart';
 
 import 'package:dio/dio.dart';
-import 'package:open_filex/open_filex.dart';
 
 class ExGratiaBeneficiaryList extends StatelessWidget {
   final List<ExGratiaBeneficiary> list;
   final Function(ExGratiaBeneficiary) onEdit;
   final Function(ExGratiaBeneficiary) onDelete;
+  final IconData icon;
 
   const ExGratiaBeneficiaryList({
     super.key,
     required this.list,
     required this.onEdit,
     required this.onDelete,
+    required this.icon,
   });
 
   static const String _docApiBase =
@@ -37,6 +38,10 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
 
     return isMobile ? _mobileView(context) : _tableView(context);
   }
+
+  /* ========================================================= */
+  /* ======================= TABLE VIEW ====================== */
+  /* ========================================================= */
 
   Widget _tableView(BuildContext context) {
     return Column(
@@ -82,12 +87,19 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
           _cell(b.village, 2),
           _cell(b.assistance, 4),
           _cell("₹${b.amount}", 2),
+
+          /// ✅ Pass Beneficiary Name Confirmed
           _documentsCell(context, b),
+
           _actionCell(b),
         ],
       ),
     );
   }
+
+  /* ========================================================= */
+  /* ======================= MOBILE VIEW ===================== */
+  /* ========================================================= */
 
   Widget _mobileView(BuildContext context) {
     return ListView.builder(
@@ -115,7 +127,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // HEADER
                 Row(
                   children: [
                     Stack(
@@ -157,24 +168,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        "₹${b.amount}",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: Colors.green.shade800,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
 
@@ -185,15 +178,18 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                   title: "Village",
                   value: b.village,
                 ),
+
                 const SizedBox(height: 12),
+
                 _detailCard(
-                  icon: Icons.volunteer_activism,
+                  icon: icon,
                   title: "Assistance",
                   value: b.assistance,
                 ),
 
                 const SizedBox(height: 14),
 
+                /// Documents List
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
@@ -224,7 +220,8 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                       else
                         ...b.documents.map(
                           (d) => InkWell(
-                            onTap: () => _showDocOptions(context, d),
+                            onTap: () =>
+                                _showDocOptions(context, d, b.beneficiaryName),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 4),
                               child: Row(
@@ -245,11 +242,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                                       ),
                                     ),
                                   ),
-                                  const Icon(
-                                    Icons.more_vert,
-                                    size: 18,
-                                    color: Colors.grey,
-                                  ),
                                 ],
                               ),
                             ),
@@ -266,11 +258,13 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 
+  /* ========================================================= */
+  /* ====================== BASE64 FETCH ====================== */
+  /* ========================================================= */
+
   Future<Map<String, dynamic>> _fetchBase64Doc(String docCode) async {
     final url = "$_docApiBase?doc=$docCode";
-
     final response = await Dio().get(url);
-
     return response.data["data"];
   }
 
@@ -285,7 +279,24 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 
-  void _showDocOptions(BuildContext context, doc) {
+  /* ========================================================= */
+  /* ✅ FIX 1: EXTENSION BASED ON MIME TYPE                     */
+  /* ========================================================= */
+
+  String _getExtension(String mimeType) {
+    if (mimeType.contains("pdf")) return ".pdf";
+    if (mimeType.contains("jpeg")) return ".jpg";
+    if (mimeType.contains("png")) return ".png";
+    if (mimeType.contains("msword")) return ".doc";
+    if (mimeType.contains("officedocument")) return ".docx";
+    return "";
+  }
+
+  /* ========================================================= */
+  /* ===================== OPTIONS SHEET ====================== */
+  /* ========================================================= */
+
+  void _showDocOptions(BuildContext context, doc, String beneficiaryName) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -306,6 +317,7 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
               ),
               const SizedBox(height: 15),
 
+              /// Preview
               ListTile(
                 leading: const Icon(Icons.visibility, color: Colors.blue),
                 title: const Text("Preview in App"),
@@ -315,12 +327,17 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                 },
               ),
 
+              /// ✅ Download Only (No Open)
               ListTile(
                 leading: const Icon(Icons.download, color: Colors.orange),
-                title: const Text("Download & Open"),
+                title: const Text("Download File"),
                 onTap: () async {
                   Navigator.pop(context);
-                  await _downloadBase64(context, doc.documentCode);
+                  await _downloadBase64(
+                    context,
+                    doc.documentCode,
+                    beneficiaryName,
+                  );
                 },
               ),
             ],
@@ -330,8 +347,11 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 
+  /* ========================================================= */
+  /* ===================== PREVIEW FILE ======================= */
+  /* ========================================================= */
+
   Future<void> _previewBase64(BuildContext context, String docCode) async {
-    // ✅ Show Loading Popup for ALL files
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -341,7 +361,7 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     try {
       final data = await _fetchBase64Doc(docCode);
 
-      Navigator.pop(context); // ✅ Close Loader
+      Navigator.pop(context);
 
       final filename = data["filename"];
       final mimeType = data["documentType"];
@@ -349,16 +369,13 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
 
       Uint8List bytes = _decodeBase64(base64Data);
 
-      // IMAGE Preview
       if (mimeType.startsWith("image/")) {
         showDialog(
           context: context,
           builder: (_) =>
               Dialog(child: InteractiveViewer(child: Image.memory(bytes))),
         );
-      }
-      // PDF Preview
-      else if (mimeType == "application/pdf") {
+      } else if (mimeType == "application/pdf") {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -366,15 +383,13 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                 PdfViewerPage.fromBytes(bytes: bytes, title: filename),
           ),
         );
-      }
-      // OTHER Files
-      else {
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Cannot preview file type: $mimeType")),
         );
       }
     } catch (e) {
-      Navigator.pop(context); // ✅ Close Loader even on error
+      Navigator.pop(context);
 
       ScaffoldMessenger.of(
         context,
@@ -382,8 +397,15 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     }
   }
 
-  Future<void> _downloadBase64(BuildContext context, String docCode) async {
-    // ✅ Show Loading
+  /* ========================================================= */
+  /* ✅ FIX 2: DOWNLOAD ORGANIZED + EXTENSION CORRECT           */
+  /* ========================================================= */
+
+  Future<void> _downloadBase64(
+    BuildContext context,
+    String docCode,
+    String beneficiaryName,
+  ) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -393,17 +415,37 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     try {
       final data = await _fetchBase64Doc(docCode);
 
-      Navigator.pop(context); // Close Loader
+      Navigator.pop(context);
 
       final filename = data["filename"];
+      final mimeType = data["documentType"];
       final base64Data = data["base64Data"];
 
       Uint8List bytes = _decodeBase64(base64Data);
 
-      final directory = Directory("/storage/emulated/0/Download");
-      if (!directory.existsSync()) directory.createSync(recursive: true);
+      /// Extension Fix
+      final ext = _getExtension(mimeType);
 
-      final savePath = "${directory.path}/$filename";
+      /// Safe Filename
+      String safeName = filename.replaceAll(" ", "_").replaceAll("/", "_");
+
+      if (!safeName.endsWith(ext)) {
+        safeName += ext;
+      }
+
+      /// Safe Folder Name
+      String folder = beneficiaryName.replaceAll(" ", "_").toUpperCase();
+
+      /// Organized Directory
+      final directory = Directory(
+        "/storage/emulated/0/Download/DRMS_Beneficiaries/$folder",
+      );
+
+      if (!directory.existsSync()) {
+        directory.createSync(recursive: true);
+      }
+
+      final savePath = "${directory.path}/$safeName";
 
       File file = File(savePath);
       await file.writeAsBytes(bytes);
@@ -411,11 +453,9 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.green.shade700,
-          content: Text("✅ Saved at:\n$savePath"),
+          content: Text("✅ Downloaded Successfully!\nSaved at:\n$savePath"),
         ),
       );
-
-      await OpenFilex.open(savePath);
     } catch (e) {
       Navigator.pop(context);
 
@@ -424,6 +464,10 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
       ).showSnackBar(SnackBar(content: Text("❌ Download failed: $e")));
     }
   }
+
+  /* ========================================================= */
+  /* ===================== DOCUMENT ICONS ===================== */
+  /* ========================================================= */
 
   Widget _cell(String text, int flex) =>
       Expanded(flex: flex, child: Text(text));
@@ -437,100 +481,24 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: b.documents.map((d) {
-                return FutureBuilder<Map<String, dynamic>>(
-                  future: _fetchBase64Doc(d.documentCode),
-                  builder: (context, snapshot) {
-                    // ✅ Loading Spinner
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Container(
-                        height: 45,
-                        width: 45,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      );
-                    }
-
-                    // ❌ Error Case
-                    if (!snapshot.hasData) {
-                      return Container(
-                        height: 45,
-                        width: 45,
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.error, color: Colors.red),
-                      );
-                    }
-
-                    final data = snapshot.data!;
-                    final mimeType = data["documentType"];
-                    final base64Data = data["base64Data"];
-
-                    Uint8List bytes = _decodeBase64(base64Data);
-
-                    // ✅ IMAGE THUMBNAIL PREVIEW
-                    if (mimeType.startsWith("image/")) {
-                      return InkWell(
-                        onTap: () => _showDocOptions(context, d),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.memory(
-                            bytes,
-                            height: 45,
-                            width: 45,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      );
-                    }
-
-                    // ✅ PDF ICON PREVIEW
-                    if (mimeType == "application/pdf") {
-                      return InkWell(
-                        onTap: () => _showDocOptions(context, d),
-                        child: Container(
-                          height: 45,
-                          width: 45,
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.picture_as_pdf,
-                            color: Colors.red,
-                          ),
-                        ),
-                      );
-                    }
-
-                    // ✅ OTHER FILE TYPES
-                    return InkWell(
-                      onTap: () => _showDocOptions(context, d),
-                      child: Container(
-                        height: 45,
-                        width: 45,
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.insert_drive_file),
-                      ),
-                    );
-                  },
+                return InkWell(
+                  onTap: () => _showDocOptions(context, d, b.beneficiaryName),
+                  child: Container(
+                    height: 45,
+                    width: 45,
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.attach_file),
+                  ),
                 );
               }).toList(),
             ),
     );
   }
+
+  /* ========================================================= */
 
   Widget _actionCell(ExGratiaBeneficiary b) {
     return Expanded(
@@ -597,6 +565,8 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 }
+
+/* ========================================================= */
 
 class _HCell extends StatelessWidget {
   final String text;
