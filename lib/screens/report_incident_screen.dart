@@ -162,52 +162,6 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
     });
   }
 
-  // File picker functions
-  // Future<void> _pickImages() async {
-  //   if (isPicking) return;
-
-  //   setState(() => isPicking = true);
-
-  //   try {
-  //     final List<XFile?>? xFiles = await _picker.pickMultiImage(
-  //       maxWidth: 1200,
-  //       maxHeight: 1200,
-  //       imageQuality: 85,
-  //       limit: 5 - selectedImages.length,
-  //     );
-
-  //     if (xFiles != null && xFiles.isNotEmpty) {
-  //       for (var xFile in xFiles) {
-  //         if (xFile != null) {
-  //           final file = File(xFile.path);
-  //           final fileSize = await file.length();
-  //           if (fileSize <= 2 * 1024 * 1024) {
-  //             setState(() {
-  //               selectedImages.add(file);
-  //             });
-  //           } else {
-  //             if (mounted) {
-  //               ScaffoldMessenger.of(context).showSnackBar(
-  //                 SnackBar(
-  //                   content: Text("Image too large. Max 2MB allowed."),
-  //                   backgroundColor: Colors.orange,
-  //                 ),
-  //               );
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }
-  //   } catch (e) {
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(
-  //         context,
-  //       ).showSnackBar(SnackBar(content: Text("Failed to pick images")));
-  //     }
-  //   } finally {
-  //     if (mounted) setState(() => isPicking = false);
-  //   }
-  // }
   Future<void> _pickImages() async {
     if (isPicking) return;
 
@@ -296,44 +250,11 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
     });
   }
 
-  // Future<void> _pickAnyFile() async {
-  //   FilePickerResult? result = await FilePicker.platform.pickFiles(
-  //     type: FileType.custom,
-  //     allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
-  //     allowMultiple: true,
-  //     withData: true,
-  //   );
-
-  //   if (result != null) {
-  //     for (var file in result.files) {
-  //       final fileSize = file.size;
-  //       if (fileSize <= 2 * 1024 * 1024) {
-  //         setState(() {
-  //           filePaths.add(file.path ?? '');
-  //         });
-  //       } else {
-  //         ScaffoldMessenger.of(context).showSnackBar(
-  //           SnackBar(
-  //             content: Text("File too large. Max 2MB allowed."),
-  //             backgroundColor: Colors.orange,
-  //           ),
-  //         );
-  //       }
-  //     }
-  //   }
-  // }
-
   void _removeImage(int index) {
     setState(() {
       selectedImages.removeAt(index);
     });
   }
-
-  // void _removeFile(int index) {
-  //   setState(() {
-  //     filePaths.removeAt(index);
-  //   });
-  // }
 
   // Handlers
   void _pickDate() async {
@@ -511,76 +432,80 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // HEADER SECTION
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [primaryPurple, Color(0xff5A54D1)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryPurple.withOpacity(0.2),
-                    blurRadius: 20,
-                    offset: Offset(0, 10),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  gradient: const LinearGradient(
+                    colors: [primaryPurple, Color(0xff5A54D1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
-              ),
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(16, 20, 16, 32),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.22),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.warning_amber_rounded,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Disaster Incident Report",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.3,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 6),
-                          Text(
-                            "Please provide accurate information about the incident",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryPurple.withOpacity(0.25),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
                     ),
                   ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // ICON BOX
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.20),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      // TEXT
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Disaster Incident Report",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              "Please provide accurate information about the incident.",
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 13,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
             Padding(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+
               child: Form(
                 key: _formKey,
                 child: Column(

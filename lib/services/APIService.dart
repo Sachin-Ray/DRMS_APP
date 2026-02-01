@@ -112,23 +112,6 @@ class APIService {
     }
   }
 
-  //   Future<Map<String, dynamic>?> submitIncidentReport(
-  //     Map<String, dynamic> payload) async {
-  //   try {
-  //     final response = await CustomHTTPRequest().post(
-  //       "${drmsURL}savefir",
-  //       jsonEncode(payload),
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       return jsonDecode(response.body);
-  //     }
-  //   } catch (e) {
-  //     print("Submit error: $e");
-  //   }
-  //   return null;
-  // }
-
   Future<Map<String, dynamic>?> submitSaveAssistanceForm(
     Map<String, dynamic> payload,
   ) async {
@@ -137,6 +120,8 @@ class APIService {
         "${drmsURL}saveassistanceform",
         jsonEncode(payload),
       );
+
+      debugPrint("Before Submit: ${response.body}");
 
       if (response.statusCode == 200) {
         debugPrint("Submit Response: ${response.body}");
@@ -304,7 +289,8 @@ class APIService {
       if (jsonBody['status'] != "SUCCESS") return null;
 
       final List list = jsonBody['data'];
-
+      debugPrint("Norm List: $list");
+      debugPrint("Lenght Norm List: ${list.length}");
       return list.map((e) => ExGratiaNorm.fromJson(e)).toList();
     } catch (e) {
       debugPrint("ExGratiaNorm API Error: $e");
@@ -383,47 +369,45 @@ class APIService {
     }
   }
 
- Future<List<Map<String, dynamic>>> fetchInputSubsidyNorms({
-  required String farmertype,
-  required String subtype,
-  required String losstype,
-}) async {
-  try {
-    String url = "";
+  Future<List<Map<String, dynamic>>> fetchInputSubsidyNorms({
+    required String farmertype,
+    required String subtype,
+    required String losstype,
+  }) async {
+    try {
+      String url = "";
 
-    if (losstype == "perinial crop") {
-      url =
-          "${drmsURL}fetchperennialnorms?farmertype=$farmertype&subtype=$subtype&losstype=$losstype";
-    } 
-    else if (losstype == "sericulture crop" || losstype == "agriculture, horticulture and annual crop") {
-      url =
-          "${drmsURL}fetchsericulturenorms?farmertype=$farmertype&subtype=$subtype&losstype=$losstype";
-    }
-
-    final response = await CustomHTTPRequest().get(url);
-
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
-
-      if (decoded is Map &&
-          decoded["status"] == "SUCCESS" &&
-          decoded["data"] is List) {
-        return List<Map<String, dynamic>>.from(decoded["data"]);
+      if (losstype == "perinial crop") {
+        url =
+            "${drmsURL}fetchperennialnorms?farmertype=$farmertype&subtype=$subtype&losstype=$losstype";
+      } else if (losstype == "sericulture crop" ||
+          losstype == "agriculture, horticulture and annual crop") {
+        url =
+            "${drmsURL}fetchsericulturenorms?farmertype=$farmertype&subtype=$subtype&losstype=$losstype";
       }
 
-      if (decoded is List) {
-        return List<Map<String, dynamic>>.from(decoded);
-      }
-    }
+      final response = await CustomHTTPRequest().get(url);
 
-    return [];
-  } catch (e) {
-    debugPrint("Input Subsidy Norm Error: $e");
-    return [];
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+
+        if (decoded is Map &&
+            decoded["status"] == "SUCCESS" &&
+            decoded["data"] is List) {
+          return List<Map<String, dynamic>>.from(decoded["data"]);
+        }
+
+        if (decoded is List) {
+          return List<Map<String, dynamic>>.from(decoded);
+        }
+      }
+
+      return [];
+    } catch (e) {
+      debugPrint("Input Subsidy Norm Error: $e");
+      return [];
+    }
   }
-}
-
-
 
   Future<List<Map<String, dynamic>>> fetchPerennialNorms({
     required String farmertype,
@@ -479,12 +463,12 @@ class APIService {
   }
 
   Future<List<Map<String, dynamic>>> getNormBySubtype(String subtype) async {
-  try {
-    final response = await CustomHTTPRequest().get(
+    try {
+      final response = await CustomHTTPRequest().get(
         "${drmsURL}getnormbysubtype?subType=$subtype",
       );
 
-    if (response.statusCode == 200) {
+      if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
 
         if (decoded is Map &&
@@ -497,125 +481,121 @@ class APIService {
       debugPrint("Sericulture Norm Error: $e");
     }
 
-  return [];
-}
+    return [];
+  }
 
-Future<bool> uploadBeneficiaryDocuments({
-  required String beneficiaryId,
-  required List<Map<String, dynamic>> documents,
-}) async {
-  try {
-
-    final response = await CustomHTTPRequest().post(
+  Future<bool> uploadBeneficiaryDocuments({
+    required String beneficiaryId,
+    required List<Map<String, dynamic>> documents,
+  }) async {
+    try {
+      final response = await CustomHTTPRequest().post(
         "${drmsURL}upload-updated-enclocures?beneficiaryId=$beneficiaryId",
         jsonEncode(documents),
       );
 
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
-      return decoded["status"] == "SUCCESS";
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        return decoded["status"] == "SUCCESS";
+      }
+    } catch (e) {
+      debugPrint("Upload Error: $e");
     }
-  } catch (e) {
-    debugPrint("Upload Error: $e");
+
+    return false;
   }
 
-  return false;
-}
+  Future<List<Map<String, dynamic>>> getAnimalSubtypeByAnimalType(
+    String animalType,
+  ) async {
+    try {
+      final response = await CustomHTTPRequest().get(
+        "${drmsURL}getanimalsubtypebyanimaltype?animalType=$animalType",
+      );
 
-Future<List<Map<String, dynamic>>> getAnimalSubtypeByAnimalType(
-    String animalType) async {
-  try {
-    final response = await CustomHTTPRequest().get(
-      "${drmsURL}getanimalsubtypebyanimaltype?animalType=$animalType",
-    );
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        debugPrint(" decoded Animal Subtype: $decoded");
 
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
-      debugPrint(" decoded Animal Subtype: $decoded");
-
-      if (decoded is Map &&
+        if (decoded is Map &&
             decoded["status"] == "SUCCESS" &&
             decoded["data"] is List) {
           return List<Map<String, dynamic>>.from(decoded["data"]);
+        }
       }
-    }
-  } catch (e) {
-    debugPrint("Animal Subtype Fetch Error: $e");
-  }
-
-  return [];
-}
-
-Future<int?> getNormCodeByAssistanceType(String subtype) async {
-  try {
-    final response = await CustomHTTPRequest().get(
-      "${drmsURL}getnormcodebyassistancetype?assistanceType=$subtype",
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return json["data"];
-    }
-  } catch (e) {
-    debugPrint("NormCode API Error: $e");
-  }
-  return null;
-}
-
-Future<List<Map<String, dynamic>>> getHouseSubtypeByHouseType({
-  required String subType,
-  required String houseType,
-}) async {
-  try {
-    final response = await CustomHTTPRequest().get(
-      "${drmsURL}getbysubtypeandhousetype?subType=$subType&houseType=$houseType",
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-
-      return List<Map<String, dynamic>>.from(json["data"]);
+    } catch (e) {
+      debugPrint("Animal Subtype Fetch Error: $e");
     }
 
     return [];
-  } catch (e) {
-    debugPrint("❌ House Subtype API Error: $e");
-    return [];
   }
-}
 
-// ======================================================
-// ✅ GET NORM CODE FOR HOUSING (SUBTYPE8)
-// ======================================================
-Future<int?> getNormCodeByHousingAssistType(String assistanceType) async {
-  try {
-    final response = await CustomHTTPRequest().get(
-      "${drmsURL}getnormcodebyassistancetypeforhousing?assistanceType=$assistanceType",
-    );
+  Future<int?> getNormCodeByAssistanceType(String subtype) async {
+    try {
+      final response = await CustomHTTPRequest().get(
+        "${drmsURL}getnormcodebyassistancetype?assistanceType=$subtype",
+      );
 
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-
-      // ✅ API returns normCode inside data
-      final data = json["data"];
-
-      if (data != null && data is int) {
-        return data;
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return json["data"];
       }
-
-      if (data != null && data is String) {
-        return int.tryParse(data);
-      }
+    } catch (e) {
+      debugPrint("NormCode API Error: $e");
     }
-
-    return null;
-  } catch (e) {
-    debugPrint("❌ Housing NormCode API Error: $e");
     return null;
   }
-}
 
+  Future<List<Map<String, dynamic>>> getHouseSubtypeByHouseType({
+    required String subType,
+    required String houseType,
+  }) async {
+    try {
+      final response = await CustomHTTPRequest().get(
+        "${drmsURL}getbysubtypeandhousetype?subType=$subType&houseType=$houseType",
+      );
 
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
 
+        return List<Map<String, dynamic>>.from(json["data"]);
+      }
 
+      return [];
+    } catch (e) {
+      debugPrint("❌ House Subtype API Error: $e");
+      return [];
+    }
+  }
+
+  // ======================================================
+  // ✅ GET NORM CODE FOR HOUSING (SUBTYPE8)
+  // ======================================================
+  Future<int?> getNormCodeByHousingAssistType(String assistanceType) async {
+    try {
+      final response = await CustomHTTPRequest().get(
+        "${drmsURL}getnormcodebyassistancetypeforhousing?assistanceType=$assistanceType",
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+
+        // ✅ API returns normCode inside data
+        final data = json["data"];
+
+        if (data != null && data is int) {
+          return data;
+        }
+
+        if (data != null && data is String) {
+          return int.tryParse(data);
+        }
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint("❌ Housing NormCode API Error: $e");
+      return null;
+    }
+  }
 }

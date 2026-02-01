@@ -166,6 +166,7 @@ class _BeneficiaryDetailsWidgetState extends State<BeneficiaryDetailsWidget> {
 
             // For ROLE_BDO -> block comes from login
             if (user.roles == 'ROLE_BDO') {
+              widget.model.blockCode = user.blockcode;
               return TextFormField(
                 enabled: false,
                 initialValue: user.blockname,

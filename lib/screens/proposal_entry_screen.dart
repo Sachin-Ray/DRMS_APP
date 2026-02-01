@@ -1,4 +1,3 @@
-import 'package:drms/ReportIncidentScreen_Widgets/add_agriculture_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/add_animal_husbandry_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/add_fishery_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/add_gr_beneficiary_dialog.dart';
@@ -38,18 +37,13 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
   bool isLoadingPRs = false;
   bool showBeneficiarySection = false;
 
-  List<ExGratiaBeneficiary> all_beneficiaries = [];
+  List<ExGratiaBeneficiary> beneficiaries = [];
   bool isLoadingBeneficiaries = false;
-
-  // List<ExGratiaBeneficiary> beneficiaries = [];
-  // bool showBeneficiarySection = false;
-  bool allDocumentsUploaded = true;
 
   final List<DateTime> highlightedDates = [];
   final List<String> prList = [];
 
-  /// Dummy beneficiaries (replace later with API)
-  // final List<Map<String, dynamic>> beneficiaries = [];
+  DateTime _focusedDay = DateTime.now();
 
   @override
   void initState() {
@@ -82,13 +76,10 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
       assistanceHead: widget.assistanceHead,
     );
 
-    debugPrint("Loaded beneficiaries count: ${list.length}");
-
-
     if (!mounted) return;
 
     setState(() {
-      all_beneficiaries = list;
+      beneficiaries = list;
       isLoadingBeneficiaries = false;
     });
   }
@@ -109,6 +100,47 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
     if (mounted) setState(() => isLoadingPRs = false);
   }
 
+  Future<void> _pickYear() async {
+    final selectedYear = await showDialog<int>(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Text("Select Year"),
+          content: SizedBox(
+            height: 300,
+            width: double.maxFinite,
+            child: ListView.builder(
+              itemCount: 16,
+              itemBuilder: (context, index) {
+                final year = 2020 + index;
+
+                return ListTile(
+                  title: Text(
+                    year.toString(),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context, year);
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedYear != null) {
+      setState(() {
+        _focusedDay = DateTime(selectedYear, _focusedDay.month, 1);
+      });
+
+      // ✅ Close calendar and reopen with new year
+      Navigator.pop(context);
+      _pickDate();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
@@ -119,12 +151,12 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
         child: ListView(
           children: [
             _topInfoBanner(),
+
             Padding(
               padding: const EdgeInsets.all(16),
               child: _incidentDetailsCard(),
             ),
 
-            /// HIDDEN -> SHOWN ONLY AFTER PR SELECT
             if (showBeneficiarySection)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -136,22 +168,155 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
     );
   }
 
+  /* ---------------- TOP MODERN INFO BANNER ---------------- */
+
   Widget _topInfoBanner() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xff0EA5B7),
-        borderRadius: BorderRadius.circular(10),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: const LinearGradient(
+            colors: [primaryBlue, Color(0xff1D4ED8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: primaryBlue.withOpacity(0.25),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.info_outline_rounded,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Proposal Entry Instructions",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "Please select Date of Incidence and PR/FIR No. before adding beneficiaries.",
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 13,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      child: const Row(
+    );
+  }
+
+  /* ---------------- INCIDENT DETAILS CARD ---------------- */
+
+  Widget _incidentDetailsCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline, color: Colors.white),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              "Please select Date of Incidence and FIR/Preliminary Report No. before creating or modifying details.",
-              style: TextStyle(color: Colors.white, fontSize: 13),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: primaryBlue.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.assignment_outlined,
+                  color: primaryBlue,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                "Incident Details",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xff111827),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          _buildRequiredLabel("Date of Incidence"),
+          const SizedBox(height: 10),
+          _datePicker(),
+          const SizedBox(height: 8),
+          _dateHint(),
+
+          const SizedBox(height: 18),
+
+          _buildRequiredLabel("Preliminary Report No."),
+          const SizedBox(height: 10),
+          _prDropdown(),
+
+          const SizedBox(height: 22),
+
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: selectedPR == null ? null : _openBeneficiaryModal,
+              icon: const Icon(Icons.person_add_alt_1_rounded),
+              label: const Text(
+                "Add Beneficiary",
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                elevation: 0,
+              ),
             ),
           ),
         ],
@@ -159,96 +324,43 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
     );
   }
 
-  Widget _incidentDetailsCard() {
-    return Material(
-      elevation: 2,
+  /* ---------------- DATE PICKER ---------------- */
+
+  Widget _datePicker() {
+    return InkWell(
+      onTap: isLoadingDates ? null : _pickDate,
       borderRadius: BorderRadius.circular(14),
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xffF9FAFB),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xffE5E7EB)),
+        ),
+        child: Row(
           children: [
-            const Row(
-              children: [
-                Icon(Icons.info, color: primaryBlue),
-                SizedBox(width: 6),
-                Text(
-                  "Incident Details",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                ),
-              ],
+            const Icon(
+              Icons.calendar_today_rounded,
+              color: primaryBlue,
+              size: 18,
             ),
-            const SizedBox(height: 16),
-            _buildRequiredLabel("Date of Incidence"),
-            SizedBox(height: 8),
-            _datePicker(),
-            const SizedBox(height: 8),
-            _dateHint(),
-            const SizedBox(height: 16),
-            _buildRequiredLabel("Preliminary Report No. "),
-            SizedBox(height: 8),
-            _prDropdown(),
-
-            const SizedBox(height: 20),
-
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton.icon(
-                // onPressed: showBeneficiarySection
-                //     ? _openBeneficiaryModal
-                //     : null,
-                onPressed: selectedPR == null ? null : _openBeneficiaryModal,
-                icon: const Icon(Icons.person_add_alt_1),
-                label: const Text("Add Beneficiary"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryBlue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                selectedDate != null
+                    ? DateFormat("dd/MM/yyyy").format(selectedDate!)
+                    : "Select Date of Incidence",
+                style: TextStyle(
+                  color: selectedDate != null
+                      ? const Color(0xff111827)
+                      : const Color(0xff9CA3AF),
+                  fontSize: 14,
                 ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _datePicker() {
-    return InkWell(
-      onTap: isLoadingDates ? null : _pickDate,
-      child: _inputBox(
-        icon: Icons.calendar_today,
-        text: selectedDate == null
-            ? "DD-MM-YYYY"
-            : DateFormat("dd-MM-yyyy").format(selectedDate!),
-      ),
-    );
-  }
-
-  Widget _buildRequiredLabel(String label) {
-    return Row(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: Color(0xff2D3142),
-          ),
-        ),
-        SizedBox(width: 4),
-        Text(
-          "*",
-          style: TextStyle(
-            color: errorRed,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-      ],
     );
   }
 
@@ -259,101 +371,131 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // IMPORTANT
-            children: [
-              const Text(
-                "Select Date of Incidence",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: TableCalendar(
+              firstDay: DateTime(2020),
+              lastDay: DateTime(2035),
+
+              // ✅ FIX: Focused day must be controlled
+              focusedDay: _focusedDay,
+
+              selectedDayPredicate: (d) => isSameDay(d, selectedDate),
+
+              // ✅ Date Select Works
+              onDaySelected: (day, _) {
+                Navigator.pop(context);
+
+                setState(() {
+                  selectedDate = day;
+                  _focusedDay = day; // ✅ Update focus also
+                });
+
+                _loadPRsForDate(day);
+              },
+
+              // ✅ Month Swipe Works
+              onPageChanged: (day) {
+                setState(() {
+                  _focusedDay = day;
+                });
+              },
+
+              // ✅ YEAR PICKER SHORTCUT ON HEADER TITLE
+              calendarBuilders: CalendarBuilders(
+                headerTitleBuilder: (context, day) {
+                  return InkWell(
+                    onTap: () => _pickYear(),
+                    child: Text(
+                      DateFormat("MMMM yyyy").format(day),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  );
+                },
+
+                defaultBuilder: (context, day, _) {
+                  final isHighlighted = highlightedDates.any(
+                    (d) =>
+                        d.year == day.year &&
+                        d.month == day.month &&
+                        d.day == day.day,
+                  );
+
+                  if (isHighlighted) {
+                    return Container(
+                      margin: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade600,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${day.day}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  }
+                  return null;
+                },
               ),
-              const SizedBox(height: 12),
 
-              SizedBox(
-                height: 340, // CONTROLLED HEIGHT
-                child: TableCalendar(
-                  firstDay: DateTime(2020),
-                  lastDay: DateTime(2035),
-                  focusedDay: selectedDate ?? DateTime.now(),
-                  selectedDayPredicate: (d) => isSameDay(d, selectedDate),
-
-                  onDaySelected: (day, _) {
-                    Navigator.pop(context);
-                    setState(() => selectedDate = day);
-                    _loadPRsForDate(day);
-                  },
-
-                  calendarBuilders: CalendarBuilders(
-                    defaultBuilder: (context, day, _) {
-                      final isHighlighted = highlightedDates.any(
-                        (d) =>
-                            d.year == day.year &&
-                            d.month == day.month &&
-                            d.day == day.day,
-                      );
-
-                      if (isHighlighted) {
-                        return Container(
-                          margin: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade600,
-                            shape: BoxShape.circle,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '${day.day}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        );
-                      }
-                      return null;
-                    },
-                  ),
-
-                  calendarStyle: CalendarStyle(
-                    selectedDecoration: BoxDecoration(
-                      color: primaryBlue,
-                      shape: BoxShape.circle,
-                    ),
-                    todayDecoration: BoxDecoration(
-                      border: Border.all(color: primaryBlue),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-
-                  headerStyle: const HeaderStyle(
-                    formatButtonVisible: false,
-                    titleCentered: true,
-                  ),
+              calendarStyle: const CalendarStyle(
+                selectedDecoration: BoxDecoration(
+                  color: primaryBlue,
+                  shape: BoxShape.circle,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: Color(0xffDBEAFE),
+                  shape: BoxShape.circle,
+                ),
+                todayTextStyle: TextStyle(
+                  color: primaryBlue,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ],
+
+              headerStyle: const HeaderStyle(
+                titleCentered: true,
+
+                // ✅ Fix "2 weeks" crash
+                formatButtonVisible: false,
+
+                titleTextStyle: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
+  /* ---------------- PR DROPDOWN ---------------- */
+
   Widget _prDropdown() {
     return DropdownButtonFormField<String>(
-      initialValue: selectedPR,
+      value: selectedPR,
       decoration: _inputDecoration("Select PR No."),
       items: prList
           .map(
-            (e) => DropdownMenuItem<String>(
+            (e) => DropdownMenuItem(
               value: e,
               child: Text(
                 e,
                 overflow: TextOverflow.ellipsis,
-                maxLines: 1,
                 style: const TextStyle(fontSize: 13),
               ),
             ),
           )
           .toList(),
-
       onChanged: (v) {
         setState(() {
           selectedPR = v;
@@ -364,142 +506,115 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
     );
   }
 
+  /* ---------------- BENEFICIARY TABLE CARD ---------------- */
+
   Widget _beneficiaryTableCard() {
-    return Material(
-      elevation: 2,
-      borderRadius: BorderRadius.circular(14),
-      color: Colors.white,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: Column(
         children: [
-          const SizedBox(height: 12),
-          const Text(
-            "List Of Beneficiaries",
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: primaryBlue.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.people_alt_outlined,
+                    color: primaryBlue,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  "List of Beneficiaries",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: Color(0xff111827),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const Divider(),
+          const Divider(height: 1),
 
           if (isLoadingBeneficiaries)
             const Padding(
               padding: EdgeInsets.all(24),
               child: CircularProgressIndicator(),
             )
-          else if (all_beneficiaries.isEmpty)
+          else if (beneficiaries.isEmpty)
             const Padding(
               padding: EdgeInsets.all(24),
               child: Text("No records found"),
             )
           else
             ExGratiaBeneficiaryList(
-              list: all_beneficiaries,
+              list: beneficiaries,
               onEdit: _editBeneficiary,
               onDelete: _deleteBeneficiary,
             ),
         ],
-        
-      ),
-      
-    );
-  }
-
-  void _editBeneficiary(ExGratiaBeneficiary b) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AddBeneficiaryDialog(
-        firNo: selectedPR!,
-        blocks: [],
-        villages: [],
-        // existingBeneficiary: b,
-      ),
-    ).then((_) => _loadBeneficiaries());
-  }
-
-  Future<void> _deleteBeneficiary(ExGratiaBeneficiary b) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Confirm Delete"),
-        content: const Text("Do you want to delete this beneficiary?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("No"),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Yes"),
-          ),
-        ],
       ),
     );
-
-    if (confirm != true) return;
-
-    // 🔜 call delete API here later
-
-    setState(() {
-      all_beneficiaries.removeWhere((e) => e.beneficiaryId == b.beneficiaryId);
-    });
   }
 
-  bool get canDraftProposal {
-  if (all_beneficiaries.isEmpty) return false;
+  /* ---------------- EDIT + DELETE ---------------- */
 
-  return all_beneficiaries.every(
-    (b) => b.documents.isNotEmpty,
-  );
-}
+  void _editBeneficiary(ExGratiaBeneficiary b) {}
 
+  Future<void> _deleteBeneficiary(ExGratiaBeneficiary b) async {}
+
+  /* ---------------- OPEN MODAL ---------------- */
 
   void _openBeneficiaryModal() {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
+      builder: (_) {
         if (widget.categoryTitle == "Handloom & Handicrafts") {
           return AddHandloomBeneficiaryDialog(
             blocks: [],
             villages: [],
-            onSave: (payload) {
-              print("HANDLOOM PAYLOAD:");
-              print(payload);
-            },
+            onSave: (Map<String, dynamic> p1) {},
           );
         }
-
-        if (widget.categoryTitle == "Agriculture & Horticulture Loss") {
-          return AddAgricultureBeneficiaryDialog(
-            blocks: [],
-            villages: [],
-            onSave: (payload) {
-              print(payload);
-            },
-          );
-        }
-
         if (widget.categoryTitle == "Fishery") {
           return AddFisheryBeneficiaryDialog(
             blocks: [],
-            villages: [], firNo: '$selectedPR',
+            villages: [],
+            firNo: selectedPR!,
           );
         }
-
-        if(widget.categoryTitle == "Animal Husbandry") {
+        if (widget.categoryTitle == "Animal Husbandry") {
           return AddAnimalHusbandryBeneficiaryDialog(
             blocks: [],
             villages: [],
             firNo: selectedPR!,
           );
         }
-
-        if(widget.categoryTitle == "Housing Damage") {
+        if (widget.categoryTitle == "Housing Damage") {
           return AddHousingDamageBeneficiaryDialog(
             blocks: [],
             villages: [],
             firNo: selectedPR!,
           );
         }
-
         return AddBeneficiaryDialog(
           blocks: [],
           villages: [],
@@ -507,54 +622,81 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
         );
       },
     ).then((result) {
-    if (result == true) {
-      _loadBeneficiaries();
-    }
-  });
+      if (result == true) _loadBeneficiaries();
+    });
   }
 
-  Widget _inputBox({required IconData icon, required String text}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xffF5F5F7),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xffE5E7EB)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: primaryBlue),
-          const SizedBox(width: 8),
-          Text(text),
-        ],
-      ),
-    );
-  }
+  /* ---------------- INPUT DECORATION ---------------- */
 
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
+      hintStyle: const TextStyle(color: Color(0xff9CA3AF)),
       filled: true,
-      fillColor: const Color(0xffF5F5F7),
+      fillColor: const Color(0xffF9FAFB),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xffE5E7EB)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: primaryBlue, width: 2),
       ),
     );
   }
 
-  Widget _dateHint() {
+  /* ---------------- REQUIRED LABEL ---------------- */
+
+  Widget _buildRequiredLabel(String label) {
     return Row(
-      children: const [
-        Icon(Icons.lightbulb_outline, size: 14, color: Colors.yellow),
-        SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            "Date of incidence has been highlighted in the calendar",
-            style: TextStyle(fontSize: 11, color: Color(0xff92400E)),
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: Color(0xff111827),
           ),
         ),
+        const SizedBox(width: 4),
+        const Text(
+          "*",
+          style: TextStyle(color: errorRed, fontWeight: FontWeight.bold),
+        ),
       ],
+    );
+  }
+
+  /* ---------------- DATE HINT ---------------- */
+
+  Widget _dateHint() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.lightbulb_outline_rounded, size: 16, color: Colors.orange),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              "Highlighted dates indicate incidents already reported.",
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xff92400E),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -41,17 +41,13 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
   final AssistanceDetails assistance = AssistanceDetails();
   final BankDetails bank = BankDetails();
 
-  bool b1 = true;
-  bool b2 = false;
-  bool b3 = false;
-  bool b4 = false;
-  bool b5 = false;
-  bool b6 = false;
+  bool b1 = true, b2 = false, b3 = false, b4 = false, b5 = false, b6 = false;
 
   bool isSubmitting = false;
   bool uploadingDocs = false;
 
   bool freezeForm = false;
+  bool beneficiarySaved = false;
 
   String? generatedBeneficiaryId;
 
@@ -60,14 +56,17 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
 
   Map<int, File?> uploadedDocs = {};
 
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void dispose() {
     assistance.amountNotifier.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   // ==========================================================
-  // CONFIRMATION DIALOG
+  // CONFIRM SAVE
   // ==========================================================
   Future<bool?> _showConfirmDialog() {
     return showDialog<bool>(
@@ -78,7 +77,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
         title: const Text("Confirmation"),
         content: const Text(
           "Are you sure you want to save beneficiary details?\n"
-          "After saving, you can upload enclosures.",
+          "After saving, you must upload all mandatory enclosures.",
         ),
         actions: [
           TextButton(
@@ -110,6 +109,9 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     );
   }
 
+  // ==========================================================
+  // SUBMIT BENEFICIARY
+  // ==========================================================
   Future<void> _submitBeneficiary() async {
     if (!_formKey.currentState!.validate()) {
       setState(() => b1 = true);
@@ -135,9 +137,8 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
       "firNo": widget.firNo,
       "assistanceHead": "AH-GR",
       "normSelect": [assistance.normCode],
-      "victimNames": assistance.victimNames,
+      if (assistance.normCode == 1) "victimNames": assistance.victimNames,
     };
-    debugPrint("Submitting Beneficiary Payload: $payload");
 
     final result = await APIService.instance.submitSaveAssistanceForm(payload);
 
@@ -146,36 +147,42 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     if (result != null && result["status"] == "SUCCESS") {
       generatedBeneficiaryId = result["data"]["body"].toString().trim();
 
-      debugPrint("✅ Beneficiary ID Generated: $generatedBeneficiaryId");
-
       requiredDocs = await APIService.instance.fetchDocuments(
         assistance.normCode!,
         widget.firNo,
       );
 
+      // ✅ SHOW UPLOAD SECTION + MESSAGE
       setState(() {
         freezeForm = true;
+        beneficiarySaved = true;
+
         showRequiredDocs = true;
+
+        // ✅ Auto Expand Upload Accordion
         b5 = true;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "✅ Beneficiary Saved ($generatedBeneficiaryId). Upload Enclosures Now.",
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
+      // ✅ Scroll user automatically to Upload Section
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      });
     } else {
       _showErrorDialog("Submission failed. Please try again.");
     }
   }
 
+  // ==========================================================
+  // PICK FILE
+  // ==========================================================
   Future<void> _pickFile(int documentCode) async {
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
     );
 
     if (picked != null && picked.files.single.path != null) {
@@ -185,40 +192,36 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     }
   }
 
+  // ==========================================================
+  // UPLOAD DOCUMENTS (MANDATORY)
+  // ==========================================================
   Future<void> _uploadEnclosures() async {
-    if (generatedBeneficiaryId == null) {
-      _showErrorDialog("Beneficiary ID not found.");
-      return;
-    }
+    if (generatedBeneficiaryId == null) return;
 
-    if (uploadedDocs.isEmpty) {
-      _showErrorDialog("Please upload at least one enclosure.");
-      return;
+    // ✅ Mandatory check
+    for (final doc in requiredDocs) {
+      if (uploadedDocs[doc.documentCode] == null) {
+        _showErrorDialog(
+          "All documents are mandatory.\nPlease upload: ${doc.documentName}",
+        );
+        return;
+      }
     }
 
     setState(() => uploadingDocs = true);
 
     List<Map<String, dynamic>> docsPayload = [];
 
-    for (final entry in uploadedDocs.entries) {
-      final documentCode = entry.key;
-      final file = entry.value!;
-
-      final doc = requiredDocs.firstWhere(
-        (d) => d.documentCode == documentCode,
-      );
+    for (final doc in requiredDocs) {
+      final file = uploadedDocs[doc.documentCode]!;
 
       final bytes = await file.readAsBytes();
-
       final mimeType = lookupMimeType(file.path) ?? "application/octet-stream";
 
       docsPayload.add({
         "filename": doc.documentName,
-
         "contentType": mimeType,
-
         "base64Data": base64Encode(bytes),
-
         "documentCode": doc.documentCode,
       });
     }
@@ -231,31 +234,28 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     setState(() => uploadingDocs = false);
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("✅ Beneficiary + Enclosures Uploaded Successfully"),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.pop(context);
+      Navigator.pop(context, true); // ✅ update list
     } else {
       _showErrorDialog("Upload failed. Please try again.");
     }
   }
 
+  // ==========================================================
+  // UI
+  // ==========================================================
   @override
   Widget build(BuildContext context) {
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.9,
+        width: MediaQuery.of(context).size.width * 0.92,
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ================= HEADER =================
+              // HEADER
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: const BoxDecoration(
@@ -276,19 +276,47 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(context, true),
                     ),
                   ],
                 ),
               ),
 
-              // ================= BODY =================
+              // BODY
               Flexible(
                 child: SingleChildScrollView(
+                  controller: _scrollController,
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      // ✅ FORM SECTION (Frozen after Save)
+                      // ✅ Success Banner
+                      if (beneficiarySaved)
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: const [
+                              Icon(Icons.check_circle, color: Colors.green),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  "Beneficiary Saved Successfully! Please upload mandatory enclosures below.",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // FORM SECTION
                       AbsorbPointer(
                         absorbing: freezeForm,
                         child: Column(
@@ -333,9 +361,10 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                         ),
                       ),
 
+                      // UPLOAD SECTION
                       if (showRequiredDocs)
                         AccordionSection(
-                          title: "Upload Enclosures",
+                          title: "Upload Enclosures (Mandatory)",
                           expanded: b5,
                           onToggle: () => setState(() => b5 = !b5),
                           children: [
@@ -344,7 +373,6 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                                 final file = uploadedDocs[doc.documentCode];
 
                                 return Card(
-                                  elevation: 1,
                                   child: ListTile(
                                     title: Text(doc.documentName),
                                     subtitle: file == null
@@ -367,31 +395,27 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                               }).toList(),
                             ),
 
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 18),
 
-                            ElevatedButton.icon(
-                              icon: const Icon(Icons.cloud_upload),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                  horizontal: 20,
-                                ),
-                              ),
-                              label: uploadingDocs
-                                  ? const SizedBox(
-                                      height: 18,
-                                      width: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.cloud_upload),
+                                label: uploadingDocs
+                                    ? const CircularProgressIndicator(
                                         color: Colors.white,
-                                      ),
-                                    )
-                                  : const Text("Upload Enclosures"),
-                              onPressed: uploadingDocs
-                                  ? null
-                                  : _uploadEnclosures,
+                                      )
+                                    : const Text("Upload All Documents"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                ),
+                                onPressed: uploadingDocs
+                                    ? null
+                                    : _uploadEnclosures,
+                              ),
                             ),
                           ],
                         ),
@@ -400,39 +424,20 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                 ),
               ),
 
-              // ================= FOOTER BUTTONS =================
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text("Close"),
-                      ),
+              // SAVE BUTTON FOOTER
+              if (!freezeForm)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isSubmitting ? null : _submitBeneficiary,
+                      child: isSubmitting
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text("Save Beneficiary Details"),
                     ),
-                    const SizedBox(width: 12),
-
-                    // ✅ Save Button Hidden After Freeze
-                    if (!freezeForm)
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: isSubmitting ? null : _submitBeneficiary,
-                          child: isSubmitting
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text("Save Beneficiary Details"),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),

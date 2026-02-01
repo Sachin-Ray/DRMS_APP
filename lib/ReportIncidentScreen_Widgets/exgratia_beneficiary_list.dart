@@ -22,7 +22,7 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
   });
 
   static const String _docApiBase =
-      "http://10.179.2.219:8083/drms/v-1/app/api/fetchFile";
+      "https://relief.megrevenuedm.gov.in/stagingapi/drms/v-1/app/api/fetchFile";
 
   @override
   Widget build(BuildContext context) {
@@ -123,8 +123,11 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                         CircleAvatar(
                           radius: 24,
                           backgroundColor: Colors.blue.shade50,
-                          child: const Icon(Icons.person,
-                              color: Colors.blue, size: 28),
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.blue,
+                            size: 28,
+                          ),
                         ),
                         Positioned(
                           right: 0,
@@ -156,7 +159,9 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.green.shade50,
                         borderRadius: BorderRadius.circular(12),
@@ -203,14 +208,18 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                       const Text(
                         "Enclosures",
                         style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 14),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       if (b.documents.isEmpty)
                         Text(
                           "No documents uploaded",
                           style: TextStyle(
-                              color: Colors.grey.shade600, fontSize: 13),
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                          ),
                         )
                       else
                         ...b.documents.map(
@@ -220,8 +229,11 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(vertical: 4),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.attach_file,
-                                      size: 18, color: Colors.blue),
+                                  const Icon(
+                                    Icons.attach_file,
+                                    size: 18,
+                                    color: Colors.blue,
+                                  ),
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
@@ -233,8 +245,11 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                                       ),
                                     ),
                                   ),
-                                  const Icon(Icons.more_vert,
-                                      size: 18, color: Colors.grey),
+                                  const Icon(
+                                    Icons.more_vert,
+                                    size: 18,
+                                    color: Colors.grey,
+                                  ),
                                 ],
                               ),
                             ),
@@ -258,7 +273,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
 
     return response.data["data"];
   }
-
 
   Uint8List _decodeBase64(String base64String) {
     return base64Decode(
@@ -285,8 +299,10 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
             children: [
               Text(
                 doc.documentName,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 15),
 
@@ -314,76 +330,99 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 
-
   Future<void> _previewBase64(BuildContext context, String docCode) async {
-    final data = await _fetchBase64Doc(docCode);
+    // ✅ Show Loading Popup for ALL files
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
 
-    final filename = data["filename"];
-    final mimeType = data["documentType"];
-    final base64Data = data["base64Data"];
+    try {
+      final data = await _fetchBase64Doc(docCode);
 
-    Uint8List bytes = _decodeBase64(base64Data);
+      Navigator.pop(context); // ✅ Close Loader
 
-    // IMAGE
-    if (mimeType.startsWith("image/")) {
-      showDialog(
-        context: context,
-        builder: (_) => Dialog(
-          child: InteractiveViewer(
-            child: Image.memory(bytes),
+      final filename = data["filename"];
+      final mimeType = data["documentType"];
+      final base64Data = data["base64Data"];
+
+      Uint8List bytes = _decodeBase64(base64Data);
+
+      // IMAGE Preview
+      if (mimeType.startsWith("image/")) {
+        showDialog(
+          context: context,
+          builder: (_) =>
+              Dialog(child: InteractiveViewer(child: Image.memory(bytes))),
+        );
+      }
+      // PDF Preview
+      else if (mimeType == "application/pdf") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                PdfViewerPage.fromBytes(bytes: bytes, title: filename),
           ),
-        ),
-      );
-    }
+        );
+      }
+      // OTHER Files
+      else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Cannot preview file type: $mimeType")),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context); // ✅ Close Loader even on error
 
-    // PDF
-    else if (mimeType == "application/pdf") {
-      Navigator.push(
+      ScaffoldMessenger.of(
         context,
-        MaterialPageRoute(
-          builder: (_) => PdfViewerPage.fromBytes(
-            bytes: bytes,
-            title: filename,
-          ),
-        ),
-      );
-    }
-
-    // OTHER
-    else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Cannot preview file type: $mimeType")),
-      );
+      ).showSnackBar(SnackBar(content: Text("❌ Failed to load document: $e")));
     }
   }
 
   Future<void> _downloadBase64(BuildContext context, String docCode) async {
-    final data = await _fetchBase64Doc(docCode);
-
-    final filename = data["filename"];
-    final base64Data = data["base64Data"];
-
-    Uint8List bytes = _decodeBase64(base64Data);
-
-    final directory = Directory("/storage/emulated/0/Download");
-
-    if (!directory.existsSync()) {
-      directory.createSync(recursive: true);
-    }
-
-    final savePath = "${directory.path}/$filename";
-
-    File file = File(savePath);
-    await file.writeAsBytes(bytes);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: Colors.green.shade700,
-        content: Text("✅ Saved at:\n$savePath"),
-      ),
+    // ✅ Show Loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
-    await OpenFilex.open(savePath);
+    try {
+      final data = await _fetchBase64Doc(docCode);
+
+      Navigator.pop(context); // Close Loader
+
+      final filename = data["filename"];
+      final base64Data = data["base64Data"];
+
+      Uint8List bytes = _decodeBase64(base64Data);
+
+      final directory = Directory("/storage/emulated/0/Download");
+      if (!directory.existsSync()) directory.createSync(recursive: true);
+
+      final savePath = "${directory.path}/$filename";
+
+      File file = File(savePath);
+      await file.writeAsBytes(bytes);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.green.shade700,
+          content: Text("✅ Saved at:\n$savePath"),
+        ),
+      );
+
+      await OpenFilex.open(savePath);
+    } catch (e) {
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("❌ Download failed: $e")));
+    }
   }
 
   Widget _cell(String text, int flex) =>
@@ -394,23 +433,101 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
       flex: 4,
       child: b.documents.isEmpty
           ? const Text("No documents available")
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: b.documents.map(
-                (d) => InkWell(
-                  onTap: () => _showDocOptions(context, d),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text(
-                      "• ${d.documentName}",
-                      style: const TextStyle(
-                        color: Colors.blue,
-                        fontSize: 13,
+          : Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: b.documents.map((d) {
+                return FutureBuilder<Map<String, dynamic>>(
+                  future: _fetchBase64Doc(d.documentCode),
+                  builder: (context, snapshot) {
+                    // ✅ Loading Spinner
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Container(
+                        height: 45,
+                        width: 45,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    }
+
+                    // ❌ Error Case
+                    if (!snapshot.hasData) {
+                      return Container(
+                        height: 45,
+                        width: 45,
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.error, color: Colors.red),
+                      );
+                    }
+
+                    final data = snapshot.data!;
+                    final mimeType = data["documentType"];
+                    final base64Data = data["base64Data"];
+
+                    Uint8List bytes = _decodeBase64(base64Data);
+
+                    // ✅ IMAGE THUMBNAIL PREVIEW
+                    if (mimeType.startsWith("image/")) {
+                      return InkWell(
+                        onTap: () => _showDocOptions(context, d),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.memory(
+                            bytes,
+                            height: 45,
+                            width: 45,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      );
+                    }
+
+                    // ✅ PDF ICON PREVIEW
+                    if (mimeType == "application/pdf") {
+                      return InkWell(
+                        onTap: () => _showDocOptions(context, d),
+                        child: Container(
+                          height: 45,
+                          width: 45,
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.picture_as_pdf,
+                            color: Colors.red,
+                          ),
+                        ),
+                      );
+                    }
+
+                    // ✅ OTHER FILE TYPES
+                    return InkWell(
+                      onTap: () => _showDocOptions(context, d),
+                      child: Container(
+                        height: 45,
+                        width: 45,
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.insert_drive_file),
                       ),
-                    ),
-                  ),
-                ),
-              ).toList(),
+                    );
+                  },
+                );
+              }).toList(),
             ),
     );
   }
@@ -468,7 +585,9 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                 Text(
                   value,
                   style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w700),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -489,10 +608,7 @@ class _HCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       flex: flex,
-      child: Text(
-        text,
-        style: const TextStyle(fontWeight: FontWeight.w700),
-      ),
+      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700)),
     );
   }
 }

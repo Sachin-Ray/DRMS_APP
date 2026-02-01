@@ -5,7 +5,12 @@ import 'package:intl/intl.dart';
 import 'package:drms/app_scaffold.dart';
 import 'package:shimmer/shimmer.dart';
 
-final Map<String, Color> imdColors = {'green': Colors.green, 'yellow': Colors.yellow, 'orange': Colors.orange, 'red': Colors.red};
+final Map<String, Color> imdColors = {
+  'green': Colors.green,
+  'yellow': Colors.yellow,
+  'orange': Colors.orange,
+  'red': Colors.red,
+};
 
 final Map<String, String> imdMeanings = {
   'green': "No warning; normal conditions.",
@@ -36,7 +41,14 @@ class WeatherDay {
   });
 }
 
-WeatherDay getWeatherDay(String day, double rain, double cloud, double gust, double tempMax, double tempMin) {
+WeatherDay getWeatherDay(
+  String day,
+  double rain,
+  double cloud,
+  double gust,
+  double tempMax,
+  double tempMin,
+) {
   String desc;
   IconData icon;
   if (rain > 2) {
@@ -52,11 +64,23 @@ WeatherDay getWeatherDay(String day, double rain, double cloud, double gust, dou
     desc = "Sunny";
     icon = Icons.wb_sunny;
   }
-  return WeatherDay(day: day, icon: icon, desc: desc, tempMax: tempMax, tempMin: tempMin, rain: rain, cloud: cloud, gust: gust);
+  return WeatherDay(
+    day: day,
+    icon: icon,
+    desc: desc,
+    tempMax: tempMax,
+    tempMin: tempMin,
+    rain: rain,
+    cloud: cloud,
+    gust: gust,
+  );
 }
 
 List<String> getNextDays(int count, DateTime start) {
-  return List.generate(count, (i) => DateFormat('EEE').format(start.add(Duration(days: i))));
+  return List.generate(
+    count,
+    (i) => DateFormat('EEE').format(start.add(Duration(days: i))),
+  );
 }
 
 Future<Map<String, dynamic>> fetchMegaFarmerWeatherData() async {
@@ -65,6 +89,7 @@ Future<Map<String, dynamic>> fetchMegaFarmerWeatherData() async {
   if (response.statusCode == 200) {
     try {
       final List<dynamic> data = json.decode(response.body);
+      debugPrint("Forecast data: $data");
       return {'forecast': data};
     } catch (e) {
       return {};
@@ -74,35 +99,83 @@ Future<Map<String, dynamic>> fetchMegaFarmerWeatherData() async {
   }
 }
 
-Map<String, dynamic> getAverageForecastForDate(List<dynamic> forecastData, String targetDate) {
-  final dayForecasts = forecastData.where((item) => item['forecast_date'] == targetDate).toList();
+Map<String, dynamic> getAverageForecastForDate(
+  List<dynamic> forecastData,
+  String targetDate,
+) {
+  final dayForecasts = forecastData
+      .where((item) => item['forecast_date'] == targetDate)
+      .toList();
 
   if (dayForecasts.isEmpty) {
-    return {'rain': 0.0, 'cloud': 0.0, 'gust': 0.0, 'tempMax': 0.0, 'tempMin': 0.0};
+    return {
+      'rain': 0.0,
+      'cloud': 0.0,
+      'gust': 0.0,
+      'tempMax': 0.0,
+      'tempMin': 0.0,
+    };
   }
 
   final rainAvg =
-      dayForecasts.map((item) => double.tryParse(item['rainfall']?.toString() ?? '0') ?? 0.0).reduce((a, b) => a + b) / dayForecasts.length;
+      dayForecasts
+          .map(
+            (item) =>
+                double.tryParse(item['rainfall']?.toString() ?? '0') ?? 0.0,
+          )
+          .reduce((a, b) => a + b) /
+      dayForecasts.length;
 
   final cloudAvg =
-      dayForecasts.map((item) => double.tryParse(item['cloud_cover']?.toString() ?? '0') ?? 0.0).reduce((a, b) => a + b) / dayForecasts.length;
+      dayForecasts
+          .map(
+            (item) =>
+                double.tryParse(item['cloud_cover']?.toString() ?? '0') ?? 0.0,
+          )
+          .reduce((a, b) => a + b) /
+      dayForecasts.length;
 
   final windAvg =
-      dayForecasts.map((item) => double.tryParse(item['wind_speed']?.toString() ?? '0') ?? 0.0).reduce((a, b) => a + b) / dayForecasts.length;
+      dayForecasts
+          .map(
+            (item) =>
+                double.tryParse(item['wind_speed']?.toString() ?? '0') ?? 0.0,
+          )
+          .reduce((a, b) => a + b) /
+      dayForecasts.length;
 
   final tempMaxAvg =
-      dayForecasts.map((item) => double.tryParse(item['temp_max']?.toString() ?? '0') ?? 0.0).reduce((a, b) => a + b) / dayForecasts.length;
+      dayForecasts
+          .map(
+            (item) =>
+                double.tryParse(item['temp_max']?.toString() ?? '0') ?? 0.0,
+          )
+          .reduce((a, b) => a + b) /
+      dayForecasts.length;
 
   final tempMinAvg =
-      dayForecasts.map((item) => double.tryParse(item['temp_min']?.toString() ?? '0') ?? 0.0).reduce((a, b) => a + b) / dayForecasts.length;
+      dayForecasts
+          .map(
+            (item) =>
+                double.tryParse(item['temp_min']?.toString() ?? '0') ?? 0.0,
+          )
+          .reduce((a, b) => a + b) /
+      dayForecasts.length;
 
-  return {'rain': rainAvg, 'cloud': cloudAvg, 'gust': windAvg, 'tempMax': tempMaxAvg, 'tempMin': tempMinAvg};
+  return {
+    'rain': rainAvg,
+    'cloud': cloudAvg,
+    'gust': windAvg,
+    'tempMax': tempMaxAvg,
+    'tempMin': tempMinAvg,
+  };
 }
 
 Future<List<String>> fetchWarningColors(double lat, double lon) async {
   List<String> colors = [];
   for (int i = 1; i <= 5; i++) {
-    final url = 'https://mausamgram.imd.gov.in/get_warning_color1.php?lat=$lat&lon=$lon&day=day${i}_color';
+    final url =
+        'https://mausamgram.imd.gov.in/get_warning_color1.php?lat=$lat&lon=$lon&day=day${i}_color';
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -166,10 +239,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
       List<WeatherDay> fw = [];
       for (int i = 0; i < 5; i++) {
-        final forecastDate = DateFormat('yyyy-MM-dd').format(now.add(Duration(days: i)));
+        final forecastDate = DateFormat(
+          'yyyy-MM-dd',
+        ).format(now.add(Duration(days: i)));
         final avgData = getAverageForecastForDate(forecastList, forecastDate);
 
-        fw.add(getWeatherDay(days[i], avgData['rain']!, avgData['cloud']!, avgData['gust']!, avgData['tempMax']!, avgData['tempMin']!));
+        fw.add(
+          getWeatherDay(
+            days[i],
+            avgData['rain']!,
+            avgData['cloud']!,
+            avgData['gust']!,
+            avgData['tempMax']!,
+            avgData['tempMin']!,
+          ),
+        );
       }
 
       setState(() {
@@ -213,7 +297,10 @@ class _HomeScreenState extends State<HomeScreen> {
           highlightColor: Colors.grey.shade100,
           child: Container(
             height: 160,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+            ),
           ),
         ),
         SizedBox(height: 28),
@@ -222,7 +309,10 @@ class _HomeScreenState extends State<HomeScreen> {
           highlightColor: Colors.grey.shade100,
           child: Container(
             height: 120,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
           ),
         ),
         SizedBox(height: 28),
@@ -231,7 +321,10 @@ class _HomeScreenState extends State<HomeScreen> {
           highlightColor: Colors.grey.shade100,
           child: Container(
             height: 70,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+            ),
           ),
         ),
       ],
@@ -261,8 +354,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 220,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(28),
-                    gradient: LinearGradient(colors: [Color(0xff6C63FF), Color(0xff5A54D1)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                    boxShadow: [BoxShadow(color: Color(0xff6C63FF).withOpacity(0.3), blurRadius: 24, offset: Offset(0, 12))],
+                    gradient: LinearGradient(
+                      colors: [Color(0xff6C63FF), Color(0xff5A54D1)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xff6C63FF).withOpacity(0.3),
+                        blurRadius: 24,
+                        offset: Offset(0, 12),
+                      ),
+                    ],
                   ),
                   child: Stack(
                     children: [
@@ -273,7 +376,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [Colors.white.withOpacity(0.1), Colors.transparent],
+                              colors: [
+                                Colors.white.withOpacity(0.1),
+                                Colors.transparent,
+                              ],
                             ),
                           ),
                         ),
@@ -290,10 +396,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: Colors.white.withOpacity(0.2),
-                                    border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.3),
+                                      width: 2,
+                                    ),
                                   ),
                                   child: Icon(
-                                    forecast.isNotEmpty ? forecast[0].icon : Icons.wb_sunny,
+                                    forecast.isNotEmpty
+                                        ? forecast[0].icon
+                                        : Icons.wb_sunny,
                                     color: getWeatherIconColor(currentDesc),
                                     size: 32,
                                   ),
@@ -301,10 +412,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        currentDesc.isNotEmpty ? currentDesc : "Loading...",
+                                        currentDesc.isNotEmpty
+                                            ? currentDesc
+                                            : "Loading...",
                                         style: TextStyle(
                                           color: Colors.white.withOpacity(0.95),
                                           fontSize: 20,
@@ -314,11 +428,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       SizedBox(height: 4),
                                       Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
                                         child: Text(
                                           "As of $currentTime",
-                                          style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13, fontWeight: FontWeight.w500),
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(
+                                              0.85,
+                                            ),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -333,31 +461,65 @@ class _HomeScreenState extends State<HomeScreen> {
                                   children: [
                                     Text(
                                       "${currentTempMax.round()}°",
-                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 48, height: 1, letterSpacing: -1),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 48,
+                                        height: 1,
+                                        letterSpacing: -1,
+                                      ),
                                     ),
                                     Text(
                                       "HIGH",
-                                      style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.w500),
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.8),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ],
                                 ),
-                                Icon(Icons.arrow_upward, color: Colors.green, size: 30),
+                                Icon(
+                                  Icons.arrow_upward,
+                                  color: Colors.green,
+                                  size: 30,
+                                ),
 
                                 SizedBox(width: 24),
                                 Container(
-                                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 8,
+                                    horizontal: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
                                   child: Column(
                                     children: [
                                       Text(
                                         "${currentTempMin.round()}°",
-                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 24),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 24,
+                                        ),
                                       ),
-                                      Text("LOW", style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10)),
+                                      Text(
+                                        "LOW",
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.8),
+                                          fontSize: 10,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
-                                Icon(Icons.arrow_downward, color: Colors.red, size: 30),
+                                Icon(
+                                  Icons.arrow_downward,
+                                  color: Colors.red,
+                                  size: 30,
+                                ),
                               ],
                             ),
                           ],
@@ -373,7 +535,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: Offset(0, 4))],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 20,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Padding(
                     padding: EdgeInsets.all(24),
@@ -384,13 +552,25 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Container(
                               padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(color: Color(0xff6C63FF).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                              child: Icon(Icons.calendar_today_rounded, color: Color(0xff6C63FF), size: 20),
+                              decoration: BoxDecoration(
+                                color: Color(0xff6C63FF).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.calendar_today_rounded,
+                                color: Color(0xff6C63FF),
+                                size: 20,
+                              ),
                             ),
                             SizedBox(width: 12),
                             Text(
                               "5-Day Forecast",
-                              style: TextStyle(color: Color(0xff2D3142), fontWeight: FontWeight.w600, fontSize: 18, letterSpacing: 0.2),
+                              style: TextStyle(
+                                color: Color(0xff2D3142),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 18,
+                                letterSpacing: 0.2,
+                              ),
                             ),
                           ],
                         ),
@@ -410,14 +590,29 @@ class _HomeScreenState extends State<HomeScreen> {
                                       decoration: BoxDecoration(
                                         color: Color(0xffF5F5F7),
                                         borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: getWeatherIconColor(weather.desc).withOpacity(0.2), width: 1.5),
+                                        border: Border.all(
+                                          color: getWeatherIconColor(
+                                            weather.desc,
+                                          ).withOpacity(0.2),
+                                          width: 1.5,
+                                        ),
                                       ),
-                                      child: Icon(weather.icon, color: getWeatherIconColor(weather.desc), size: 18),
+                                      child: Icon(
+                                        weather.icon,
+                                        color: getWeatherIconColor(
+                                          weather.desc,
+                                        ),
+                                        size: 18,
+                                      ),
                                     ),
                                     SizedBox(height: 8),
                                     Text(
                                       weather.day,
-                                      style: TextStyle(color: Color(0xff6B7280), fontWeight: FontWeight.w500, fontSize: 13),
+                                      style: TextStyle(
+                                        color: Color(0xff6B7280),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                     SizedBox(height: 4),
                                     Row(
@@ -425,11 +620,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                       children: [
                                         Text(
                                           "${weather.tempMax.round()}°",
-                                          style: TextStyle(color: Color(0xff2D3142), fontWeight: FontWeight.w700, fontSize: 12),
+                                          style: TextStyle(
+                                            color: Color(0xff2D3142),
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 12,
+                                          ),
                                         ),
                                         Text(
                                           "/${weather.tempMin.round()}°",
-                                          style: TextStyle(color: Color(0xff6B7280), fontWeight: FontWeight.w500, fontSize: 11),
+                                          style: TextStyle(
+                                            color: Color(0xff6B7280),
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 11,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -439,7 +642,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                       child: Container(
                                         width: 16,
                                         height: 8,
-                                        decoration: BoxDecoration(color: imdColors[warning] ?? Colors.green, borderRadius: BorderRadius.circular(4)),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              imdColors[warning] ??
+                                              Colors.green,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -460,7 +670,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("IMD Warning Legend", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(
+                        "IMD Warning Legend",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                       SizedBox(height: 8),
                       ...['green', 'yellow', 'orange', 'red'].map(
                         (code) => Padding(
@@ -470,10 +686,18 @@ class _HomeScreenState extends State<HomeScreen> {
                               Container(
                                 width: 16,
                                 height: 8,
-                                decoration: BoxDecoration(color: imdColors[code], borderRadius: BorderRadius.circular(4)),
+                                decoration: BoxDecoration(
+                                  color: imdColors[code],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
                               ),
                               SizedBox(width: 8),
-                              Flexible(child: Text(imdMeanings[code] ?? "", style: TextStyle(fontSize: 13))),
+                              Flexible(
+                                child: Text(
+                                  imdMeanings[code] ?? "",
+                                  style: TextStyle(fontSize: 13),
+                                ),
+                              ),
                             ],
                           ),
                         ),
