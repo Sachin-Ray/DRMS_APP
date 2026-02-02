@@ -35,6 +35,8 @@ class _AnimalHusbandryAssistanceWidgetState
   bool loadingSubtypes = false;
   List<Map<String, dynamic>> animalSubtypes = [];
 
+  List<int> allSelectedAnimalNorms = [];
+
   // Selected Norm Codes (Large / Small / Poultry)
   List<int> selectedAnimalNormCodes = [];
 
@@ -168,20 +170,39 @@ class _AnimalHusbandryAssistanceWidgetState
   // UPDATE GRAND TOTAL
   // ======================================================
   void updateGrandTotal() {
-    double total = 0;
+  double total = 0;
 
-    calculatedAmounts.forEach((_, amt) => total += amt);
+  // Add Milch/Draught calculated amounts
+  calculatedAmounts.forEach((_, amt) => total += amt);
 
-    // Poultry amount
-    total += poultryCalculated;
+  // Add Poultry amount
+  total += poultryCalculated;
 
-    widget.model.amountNotifier.value = total;
+  // Update total amount
+  widget.model.amountNotifier.value = total;
 
-    widget.model.selectedNormCodes.clear();
-    widget.model.selectedNormCodes.addAll(selectedAnimalNormCodes);
+  // ======================================================
+  // ✅ STORE SELECTED NORMS IN ONE VARIABLE
+  // ======================================================
+  allSelectedAnimalNorms.clear();
+  allSelectedAnimalNorms.addAll(selectedAnimalNormCodes);
 
-    debugPrint("✅ TOTAL Animal Husbandry Amount = ₹$total");
-  }
+  // ======================================================
+  // ✅ STORE IN MAIN MODEL (Handloom Style)
+  // ======================================================
+  widget.model.normCodes.clear();
+  widget.model.normCodes.addAll(allSelectedAnimalNorms);
+
+  // ======================================================
+  // ✅ PRINT SELECTED NORMS
+  // ======================================================
+  debugPrint("=====================================");
+  debugPrint("🐄 Selected Animal Husbandry Norm Codes:");
+  debugPrint(allSelectedAnimalNorms.toString());
+  debugPrint("✅ TOTAL Animal Husbandry Amount = ₹$total");
+  debugPrint("=====================================");
+}
+
 
   // ======================================================
   // UPDATE MODEL VALUES
@@ -197,8 +218,9 @@ class _AnimalHusbandryAssistanceWidgetState
       widget.model.assistanceTypeList.add("SUBTYPE4");
     }
 
-    widget.model.selectedNormCodes.clear();
-    widget.model.selectedNormCodes.addAll(selectedAnimalNormCodes);
+    widget.model.normCodes.clear();
+widget.model.normCodes.addAll(selectedAnimalNormCodes);
+
 
     updateGrandTotal();
   }
@@ -529,3 +551,5 @@ class _AnimalHusbandryAssistanceWidgetState
     );
   }
 }
+
+

@@ -20,23 +20,30 @@ class BeneficiaryDetails {
 class AssistanceDetails {
   int? normCode;
 
-  /// Single assistance type (used in Agriculture etc.)
+  List<int> normCodes = [];
   String? assistanceType;
-
-  /// ✅ Multiple assistance types (used in Fishery Boat + Net)
   List<String> assistanceTypeList = [];
-
-  // Agriculture specific
   String? landHolding;
-
   double? baseAmount;
   int victimCount = 1;
-
-  // Live amount notifier
   ValueNotifier<double> amountNotifier = ValueNotifier(0);
 
+  int noOfRepairBoat = 0;
+int noOfReplacementBoat = 0;
+int noOfRepairNet = 0;
+int noOfReplacementNet = 0;
+
+
+int noOfLargeAnimal = 0;
+int noOfSmallAnimal = 0;
+int noOfPoultry = 0;
+
   /// Selected Norm Codes
-  List<int> get selectedNormCodes => normCode != null ? [normCode!] : [];
+  List<int> get selectedNormCodes {
+  if (normCodes.isNotEmpty) return normCodes; // Handloom
+  if (normCode != null) return [normCode!];   // GR
+  return [];
+}
 
   // Victim names list
   List<String> victimNames = [];

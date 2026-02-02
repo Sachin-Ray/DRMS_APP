@@ -38,6 +38,7 @@ class AddAnimalHusbandryBeneficiaryDialog extends StatefulWidget {
 class _AddAnimalHusbandryBeneficiaryDialogState
     extends State<AddAnimalHusbandryBeneficiaryDialog> {
   final _formKey = GlobalKey<FormState>();
+  final ScrollController _scrollController = ScrollController();
 
   // MODELS
   final BeneficiaryDetails beneficiary = BeneficiaryDetails();
@@ -45,175 +46,53 @@ class _AddAnimalHusbandryBeneficiaryDialogState
   final BankDetails bank = BankDetails();
 
   // Accordion States
-  bool b1 = true;
-  bool b2 = false;
-  bool b3 = false;
-  bool b4 = false;
-  bool b5 = false;
-  bool b6 = false;
+  bool b1 = true, b2 = true, b3 = true, b4 = true, b5 = true, b6 = true;
 
   bool isSubmitting = false;
   bool uploadingDocs = false;
 
   bool freezeForm = false;
-  bool showRequiredDocs = false;
+  bool beneficiarySaved = false;
 
   String? generatedBeneficiaryId;
 
+  bool showRequiredDocs = false;
   List<RequiredDocument> requiredDocs = [];
+
   Map<int, File?> uploadedDocs = {};
 
   @override
   void dispose() {
     assistance.amountNotifier.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   // ======================================================
-  // SUBMIT BENEFICIARY
+  // CONFIRM DIALOG
   // ======================================================
-  Future<void> _submitBeneficiary() async {
-    if (!_formKey.currentState!.validate()) {
-      setState(() => b1 = true);
-      return;
-    }
-
-    setState(() => isSubmitting = true);
-
-    final payload = {
-      "beneficiaryName": beneficiary.name,
-      "ageCategory": beneficiary.ageCategory,
-      "gender": beneficiary.gender,
-      "blockcode": beneficiary.blockCode,
-      "villagecode": beneficiary.village,
-
-      // FIR
-      "firNo": widget.firNo,
-
-      // ✅ Animal Husbandry Assistance Head
-      "assistanceHead": "AH-AH",
-
-      // Norm Selected
-      "normSelect": [assistance.normCode],
-
-      // Bank
-      "ifsc": bank.ifsc,
-      "bankName": bank.bankName,
-      "branchCode": bank.branchCode,
-      "acNumber": bank.accountNumber,
-
-      // Remarks
-      "remarks": assistance.remarks,
-    };
-
-    final result = await APIService.instance.submitSaveAssistanceForm(payload);
-
-    setState(() => isSubmitting = false);
-
-    if (result != null && result["status"] == "SUCCESS") {
-      generatedBeneficiaryId = result["data"]["body"].toString().trim();
-
-      debugPrint("✅ Animal Husbandry Beneficiary ID: $generatedBeneficiaryId");
-
-      // Fetch Required Docs
-      requiredDocs = await APIService.instance.fetchDocuments(
-        assistance.normCode!,
-        widget.firNo,
-      );
-
-      setState(() {
-        freezeForm = true;
-        showRequiredDocs = true;
-        b5 = true;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "✅ Beneficiary Saved ($generatedBeneficiaryId). Upload Enclosures Now.",
+  Future<bool?> _showConfirmDialog() {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Confirmation"),
+        content: const Text(
+          "Are you sure you want to save beneficiary details?\n"
+          "After saving, you must upload all mandatory enclosures.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("NO"),
           ),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else {
-      _showError("Submission Failed");
-    }
-  }
-
-  // ======================================================
-  // PICK FILE
-  // ======================================================
-  Future<void> _pickFile(int docCode) async {
-    final picked = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("YES"),
+          ),
+        ],
+      ),
     );
-
-    if (picked != null && picked.files.single.path != null) {
-      setState(() {
-        uploadedDocs[docCode] = File(picked.files.single.path!);
-      });
-    }
-  }
-
-  // ======================================================
-  // UPLOAD ENCLOSURES
-  // ======================================================
-  Future<void> _uploadEnclosures() async {
-    if (generatedBeneficiaryId == null) {
-      _showError("Beneficiary ID not found.");
-      return;
-    }
-
-    if (uploadedDocs.isEmpty) {
-      _showError("Please upload at least one document.");
-      return;
-    }
-
-    setState(() => uploadingDocs = true);
-
-    List<Map<String, dynamic>> docsPayload = [];
-
-    for (final entry in uploadedDocs.entries) {
-      final docCode = entry.key;
-      final file = entry.value!;
-
-      final doc = requiredDocs.firstWhere(
-        (d) => d.documentCode == docCode,
-      );
-
-      final bytes = await file.readAsBytes();
-      final mimeType =
-          lookupMimeType(file.path) ?? "application/octet-stream";
-
-      docsPayload.add({
-        "filename": doc.documentName,
-        "contentType": mimeType,
-        "base64Data": base64Encode(bytes),
-        "documentType": "ENCLOSURE",
-        "documentCode": doc.documentCode,
-      });
-    }
-
-    final success = await APIService.instance.uploadBeneficiaryDocuments(
-      beneficiaryId: generatedBeneficiaryId!,
-      documents: docsPayload,
-    );
-
-    setState(() => uploadingDocs = false);
-
-    if (success) {
-      Navigator.pop(context);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("✅ Enclosures Uploaded Successfully"),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else {
-      _showError("Upload Failed");
-    }
   }
 
   // ======================================================
@@ -236,6 +115,163 @@ class _AddAnimalHusbandryBeneficiaryDialogState
   }
 
   // ======================================================
+  // SUBMIT BENEFICIARY
+  // ======================================================
+  Future<void> _submitBeneficiary() async {
+    if (!_formKey.currentState!.validate()) {
+      setState(() => b1 = true);
+      return;
+    }
+
+    // ✅ Ensure Norms Selected
+    if (assistance.normCodes.isEmpty) {
+      _showError("Please select at least one assistance type.");
+      return;
+    }
+
+    final confirm = await _showConfirmDialog();
+    if (confirm != true) return;
+
+    setState(() => isSubmitting = true);
+
+    // ✅ Correct Payload Format
+    final payload = {
+      "beneficiaryName": beneficiary.name,
+      "ageCategory": beneficiary.ageCategory,
+      "gender": beneficiary.gender,
+      "blockcode": beneficiary.blockCode,
+      "villagecode": beneficiary.village,
+
+      // FIR
+      "firNo": widget.firNo,
+
+      // ✅ Correct Assistance Head
+      "assistanceHead": "AH-LS",
+
+      // ✅ Multi Norm Select
+      "normSelect": assistance.normCodes,
+
+      // ✅ Animal Counts
+      "noOfLargeAnimal": assistance.noOfLargeAnimal,
+      "noOfSmallAnimal": assistance.noOfSmallAnimal,
+      "noOfPoultry": assistance.noOfPoultry,
+
+      // Bank
+      "ifsc": bank.ifsc,
+      "bankName": bank.bankName,
+      "branchCode": bank.branchCode,
+      "acNumber": bank.accountNumber,
+
+      // Remarks
+      "remarks": assistance.remarks,
+    };
+
+    final result = await APIService.instance.submitSaveAssistanceForm(payload);
+
+    setState(() => isSubmitting = false);
+
+    if (result != null && result["status"] == "SUCCESS") {
+      generatedBeneficiaryId = result["data"]["body"].toString().trim();
+
+      debugPrint("✅ Saved Beneficiary ID: $generatedBeneficiaryId");
+
+      // ✅ Fetch Required Docs for Multi Norms
+      requiredDocs = await APIService.instance.fetchDocumentsMulti(
+        assistance.normCodes,
+        widget.firNo,
+      );
+
+      setState(() {
+        freezeForm = true;
+        beneficiarySaved = true;
+        showRequiredDocs = true;
+        b5 = true;
+      });
+
+      // ✅ Scroll to Upload Section
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      _showError("Submission Failed. Please try again.");
+    }
+  }
+
+  // ======================================================
+  // PICK FILE
+  // ======================================================
+  Future<void> _pickFile(int docCode) async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
+    );
+
+    if (picked != null && picked.files.single.path != null) {
+      setState(() {
+        uploadedDocs[docCode] = File(picked.files.single.path!);
+      });
+    }
+  }
+
+  // ======================================================
+  // CHECK ALL DOCS UPLOADED
+  // ======================================================
+  bool get allDocsUploaded {
+    return requiredDocs.every((doc) => uploadedDocs[doc.documentCode] != null);
+  }
+
+  // ======================================================
+  // UPLOAD ENCLOSURES
+  // ======================================================
+  Future<void> _uploadEnclosures() async {
+    if (!allDocsUploaded) {
+      _showError("All enclosures are mandatory. Please upload all files.");
+      return;
+    }
+
+    setState(() => uploadingDocs = true);
+
+    List<Map<String, dynamic>> docsPayload = [];
+
+    for (final doc in requiredDocs) {
+      final file = uploadedDocs[doc.documentCode]!;
+      final bytes = await file.readAsBytes();
+      final mimeType = lookupMimeType(file.path) ?? "application/octet-stream";
+
+      docsPayload.add({
+        "filename": doc.documentName,
+        "contentType": mimeType,
+        "base64Data": base64Encode(bytes),
+        "documentCode": doc.documentCode,
+      });
+    }
+
+    final success = await APIService.instance.uploadBeneficiaryDocuments(
+      beneficiaryId: generatedBeneficiaryId!,
+      documents: docsPayload,
+    );
+
+    setState(() => uploadingDocs = false);
+
+    if (success) {
+      Navigator.pop(context, true);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("✅ Animal Husbandry Beneficiary + Docs Uploaded"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      _showError("Upload Failed. Please try again.");
+    }
+  }
+
+  // ======================================================
   // UI BUILD
   // ======================================================
   @override
@@ -255,9 +291,7 @@ class _AddAnimalHusbandryBeneficiaryDialogState
                 padding: const EdgeInsets.all(16),
                 decoration: const BoxDecoration(
                   color: Color(0xff001E3C),
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 child: Row(
                   children: [
@@ -274,7 +308,7 @@ class _AddAnimalHusbandryBeneficiaryDialogState
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white),
                       onPressed: () => Navigator.pop(context),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -282,9 +316,31 @@ class _AddAnimalHusbandryBeneficiaryDialogState
               // ================= BODY =================
               Flexible(
                 child: SingleChildScrollView(
+                  controller: _scrollController,
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
+                      // ✅ Success Banner
+                      if (beneficiarySaved)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          margin: const EdgeInsets.only(bottom: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.green.shade300),
+                          ),
+                          child: const Text(
+                            "✅ Beneficiary Saved Successfully! Upload all mandatory enclosures below.",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ),
+
+                      // ✅ FORM SECTIONS
                       AbsorbPointer(
                         absorbing: freezeForm,
                         child: Column(
@@ -298,53 +354,45 @@ class _AddAnimalHusbandryBeneficiaryDialogState
                                   model: beneficiary,
                                   blocks: widget.blocks,
                                   villages: widget.villages,
-                                )
+                                ),
                               ],
                             ),
-
                             AccordionSection(
                               title: "Select Assistance",
                               expanded: b2,
                               onToggle: () => setState(() => b2 = !b2),
                               children: [
-                                AnimalHusbandryAssistanceWidget(model:assistance),
+                                AnimalHusbandryAssistanceWidget(
+                                  model: assistance,
+                                ),
                               ],
                             ),
-
                             AccordionSection(
                               title: "Amount Eligible",
                               expanded: b3,
                               onToggle: () => setState(() => b3 = !b3),
-                              children: [
-                                AmountWidget(model: assistance),
-                              ],
+                              children: [AmountWidget(model: assistance)],
                             ),
-
                             AccordionSection(
-                              title: "Bank Account Details",
+                              title: "Bank Details",
                               expanded: b4,
                               onToggle: () => setState(() => b4 = !b4),
-                              children: [
-                                BankDetailsWidget(model: bank),
-                              ],
+                              children: [BankDetailsWidget(model: bank)],
                             ),
-
                             AccordionSection(
                               title: "Remarks",
                               expanded: b6,
                               onToggle: () => setState(() => b6 = !b6),
-                              children: [
-                                RemarksWidget(model: assistance),
-                              ],
+                              children: [RemarksWidget(model: assistance)],
                             ),
                           ],
                         ),
                       ),
 
-                      // ================= UPLOAD SECTION =================
+                      // ================= UPLOAD ENCLOSURES =================
                       if (showRequiredDocs)
                         AccordionSection(
-                          title: "Upload Enclosures",
+                          title: "Upload Enclosures (Mandatory)",
                           expanded: b5,
                           onToggle: () => setState(() => b5 = !b5),
                           children: [
@@ -354,46 +402,45 @@ class _AddAnimalHusbandryBeneficiaryDialogState
 
                                 return Card(
                                   child: ListTile(
-                                    title: Text(doc.documentName),
+                                    title: Text("${doc.documentName} *"),
                                     subtitle: file == null
                                         ? const Text("No file selected")
                                         : Text(
                                             file.path.split("/").last,
                                             style: const TextStyle(
                                               color: Colors.green,
+                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                     trailing: ElevatedButton(
                                       onPressed: () =>
                                           _pickFile(doc.documentCode),
                                       child: Text(
-                                        file == null ? "Choose" : "Change",
-                                      ),
+                                          file == null ? "Choose" : "Change"),
                                     ),
                                   ),
                                 );
                               }).toList(),
                             ),
-
-                            const SizedBox(height: 16),
-
-                            ElevatedButton.icon(
-                              icon: const Icon(Icons.cloud_upload),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                  horizontal: 20,
+                            const SizedBox(height: 20),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.cloud_upload),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 14),
                                 ),
+                                label: uploadingDocs
+                                    ? const CircularProgressIndicator(
+                                        color: Colors.white,
+                                      )
+                                    : const Text("Upload All Enclosures"),
+                                onPressed:
+                                    uploadingDocs ? null : _uploadEnclosures,
                               ),
-                              label: uploadingDocs
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white,
-                                    )
-                                  : const Text("Upload Enclosures"),
-                              onPressed:
-                                  uploadingDocs ? null : _uploadEnclosures,
                             )
                           ],
                         ),
@@ -405,30 +452,16 @@ class _AddAnimalHusbandryBeneficiaryDialogState
               // ================= FOOTER =================
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text("Close"),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    if (!freezeForm)
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed:
-                              isSubmitting ? null : _submitBeneficiary,
-                          child: isSubmitting
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : const Text("Save Beneficiary"),
-                        ),
-                      ),
-                  ],
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isSubmitting ? null : _submitBeneficiary,
+                    child: isSubmitting
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text("Save Animal Husbandry Beneficiary"),
+                  ),
                 ),
-              )
+              ),
             ],
           ),
         ),

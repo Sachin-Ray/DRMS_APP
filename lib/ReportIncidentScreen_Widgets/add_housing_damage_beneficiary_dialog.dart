@@ -8,6 +8,7 @@ import 'package:drms/ReportIncidentScreen_Widgets/remarks_widget.dart';
 
 import 'package:drms/model/Block.dart';
 import 'package:drms/model/Village.dart';
+import 'package:drms/services/APIService.dart';
 import 'package:flutter/material.dart';
 
 import '../model/beneficiary_models.dart';
@@ -48,42 +49,77 @@ class _AddHousingDamageBeneficiaryDialogState
   bool b6 = false;
 
   @override
+  void initState() {
+    super.initState();
+    _saveHousingBeneficiary();
+  }
+
+  @override
   void dispose() {
     assistance.amountNotifier.dispose();
     super.dispose();
   }
 
+  
+
   // ======================================================
   // SAVE FUNCTION
   // ======================================================
-  void _saveHousingBeneficiary() {
-    if (!_formKey.currentState!.validate()) {
-      setState(() => b1 = true);
-      return;
-    }
+  void _saveHousingBeneficiary() async{
+    // if (!_formKey.currentState!.validate()) {
+    //   setState(() => b1 = true);
+    //   return;
+    // }
 
-    if (assistance.assistanceTypeList.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select at least one Housing Assistance type"),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    // if (assistance.assistanceTypeList.isEmpty) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(
+    //       content: Text("Please select at least one Housing Assistance type"),
+    //       backgroundColor: Colors.red,
+    //     ),
+    //   );
+    //   return;
+    // }
 
+    // final payload = {
+    //   "beneficiary": beneficiary.toJson(),
+    //   "assistance": assistance.toJson(),
+    //   "bank": bank.toJson(),
+    //   "documents": documents.files
+    //       .map((f) => {"filename": f.path.split('/').last, "path": f.path})
+    //       .toList(),
+    // };
+    
     final payload = {
-      "beneficiary": beneficiary.toJson(),
-      "assistance": assistance.toJson(),
-      "bank": bank.toJson(),
-      "documents": documents.files
-          .map((f) => {"filename": f.path.split('/').last, "path": f.path})
-          .toList(),
-    };
+  "beneficiaryName": "Ajnabi",
+  "ageCategory": "adult",
+  "gender": "M",
+  "blockcode": 7183,
+  "villagecode": 278072,
+  "ifsc": "SBIN0000054",
+  "bankName": "STATE BANK OF INDIA",
+  "branchCode": "SBIN00054",
+  "acNumber": "12345678901",
+  "remarks": "Relief assistance for flood damage",
+  "firNo": "PR-EWKH-MAIRANG-20250325-1",
+  "assistanceHead": "AH-HU",
+  "normSelect": [38],
+  "IspuccaOrKutcha":40
+};
 
-    debugPrint("✅ Housing Payload = $payload");
+     debugPrint("Fishery Beneficiary Payload: $payload");
 
-    Navigator.pop(context, payload);
+    final result = await APIService.instance.submitSaveAssistanceForm(payload);
+
+    
+    if (result != null && result["status"] == "SUCCESS") {
+      debugPrint("Housing Damage Beneficiary saved successfully.");
+      Navigator.pop(context, true);
+
+    } else {
+      debugPrint("Error saving Housing Damage Beneficiary: ${result?["message"]}");
+    }
+  
   }
 
   // ======================================================

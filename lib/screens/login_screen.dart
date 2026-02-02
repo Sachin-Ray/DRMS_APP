@@ -21,8 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // ✅ Password toggle variable
   bool isPasswordVisible = false;
-
-  // API endpoints
   final String baseUrl =
       'https://relief.megrevenuedm.gov.in/stagingapi/drms/v-1/app/api';
 

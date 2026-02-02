@@ -684,7 +684,7 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
           return AddHandloomBeneficiaryDialog(
             blocks: [],
             villages: [],
-            onSave: (Map<String, dynamic> p1) {},
+            firNo: selectedPR!,
           );
         }
         if (widget.categoryTitle == "Fishery") {

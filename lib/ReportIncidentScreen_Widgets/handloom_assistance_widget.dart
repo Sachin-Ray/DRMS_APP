@@ -23,37 +23,50 @@ class _HandloomAssistanceWidgetState extends State<HandloomAssistanceWidget> {
 
   /// Fetch Norm Value and update amount
   Future<void> _fetchNorm(int code, bool checked) async {
-  setState(() => loading = true);
+    setState(() => loading = true);
 
-  final norm = await APIService.instance.getNormByNormCode(code);
+    final norm = await APIService.instance.getNormByNormCode(code);
 
-  /// ✅ Correct Null Check
-  if (norm != null) {
-    double amount = (norm.value ?? 0).toDouble();
+    /// ✅ Correct Null Check
+    if (norm != null) {
+      double amount = (norm.value ?? 0).toDouble();
 
-    if (code == 36) {
-      value36 = checked ? amount : 0;
+      // ===================================================
+      // ✅ STORE SELECTED NORM CODES FOR HANDLOOM
+      // ===================================================
+      if (checked) {
+        if (!widget.model.normCodes.contains(code)) {
+          widget.model.normCodes.add(code);
+        }
+      } else {
+        widget.model.normCodes.remove(code);
+      }
+
+      // ===================================================
+      // ✅ AMOUNT CALCULATION (Same as your code)
+      // ===================================================
+      if (code == 36) {
+        value36 = checked ? amount : 0;
+      }
+
+      if (code == 37) {
+        value37 = checked ? amount : 0;
+      }
+    } else {
+      debugPrint("Norm not found for code: $code");
     }
 
-    if (code == 37) {
-      value37 = checked ? amount : 0;
-    }
-  } else {
-    debugPrint("Norm not found for code: $code");
+    /// Total Amount
+    double total = value36 + value37;
+
+    /// ✅ Update Amount Notifier
+    widget.model.amountNotifier.value = total;
+
+    /// Save assistanceType
+    widget.model.assistanceType = "Handloom & Handicrafts";
+
+    setState(() => loading = false);
   }
-
-  /// Total Amount
-  double total = value36 + value37;
-
-  /// ✅ Update Amount Notifier
-  widget.model.amountNotifier.value = total;
-
-  /// Save assistanceType
-  widget.model.assistanceType = "Handloom & Handicrafts";
-
-  setState(() => loading = false);
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +86,8 @@ class _HandloomAssistanceWidgetState extends State<HandloomAssistanceWidget> {
           ),
           onChanged: (v) {
             setState(() => selected36 = v!);
+
+            /// ✅ FIX HERE
             _fetchNorm(36, v!);
           },
         ),
@@ -87,9 +102,23 @@ class _HandloomAssistanceWidgetState extends State<HandloomAssistanceWidget> {
           ),
           onChanged: (v) {
             setState(() => selected37 = v!);
+
+            /// ✅ FIX HERE
             _fetchNorm(37, v!);
           },
         ),
+
+        // ===================================================
+        // ✅ Show Selected Norm Codes (Optional Debug)
+        // ===================================================
+        if (widget.model.normCodes.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              "Selected Norms: ${widget.model.normCodes.join(", ")}",
+              style: const TextStyle(fontSize: 12, color: Colors.green),
+            ),
+          ),
 
         if (loading)
           const Padding(

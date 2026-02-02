@@ -14,36 +14,25 @@ class FisheryAssistanceWidget extends StatefulWidget {
 }
 
 class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
-  // ======================================================
-  // MAIN SELECTION
-  // ======================================================
   bool boatSelected = false;
   bool netSelected = false;
 
-  // ======================================================
-  // BOAT NORMS
-  // ======================================================
   bool loadingBoat = false;
   List<Map<String, dynamic>> boatNorms = [];
-
   List<int> selectedBoatNormCodes = [];
 
   Map<int, TextEditingController> boatControllers = {};
   Map<int, double> boatCalculatedAmounts = {};
 
-  // ======================================================
-  // NET NORMS
-  // ======================================================
   bool loadingNet = false;
   List<Map<String, dynamic>> netNorms = [];
-
   List<int> selectedNetNormCodes = [];
 
   Map<int, TextEditingController> netControllers = {};
   Map<int, double> netCalculatedAmounts = {};
 
   // ======================================================
-  // FETCH NORMS FROM API
+  // FETCH NORMS
   // ======================================================
   Future<void> fetchSubtypeNorms(String subtype) async {
     if (subtype == "SUBTYPE5") {
@@ -72,7 +61,7 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
   }
 
   // ======================================================
-  // UPDATE GRAND TOTAL AMOUNT
+  // ✅ UPDATE TOTAL + STORE NORM CODES + COUNTS
   // ======================================================
   void updateGrandTotal() {
     double total = 0;
@@ -82,15 +71,36 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
 
     widget.model.amountNotifier.value = total;
 
-    widget.model.selectedNormCodes.clear();
-    widget.model.selectedNormCodes
-        .addAll([...selectedBoatNormCodes, ...selectedNetNormCodes]);
+    // ✅ Store norm codes
+    widget.model.normCodes.clear();
+    widget.model.normCodes.addAll([
+      ...selectedBoatNormCodes,
+      ...selectedNetNormCodes,
+    ]);
 
-    debugPrint("✅ TOTAL Fishery Amount = ₹$total");
+    // ✅ Store counts properly
+    widget.model.noOfRepairBoat =
+        int.tryParse(boatControllers[31]?.text ?? "0") ?? 0;
+
+    widget.model.noOfReplacementBoat =
+        int.tryParse(boatControllers[32]?.text ?? "0") ?? 0;
+
+    widget.model.noOfRepairNet =
+        int.tryParse(netControllers[33]?.text ?? "0") ?? 0;
+
+    widget.model.noOfReplacementNet =
+        int.tryParse(netControllers[34]?.text ?? "0") ?? 0;
+
+    debugPrint("🎣 Fishery Norm Codes = ${widget.model.normCodes}");
+    debugPrint("🚤 Repair Boat = ${widget.model.noOfRepairBoat}");
+    debugPrint("🚤 Replace Boat = ${widget.model.noOfReplacementBoat}");
+    debugPrint("🎣 Repair Net = ${widget.model.noOfRepairNet}");
+    debugPrint("🎣 Replace Net = ${widget.model.noOfReplacementNet}");
+    debugPrint("✅ Total Fishery Amount = ₹$total");
   }
 
   // ======================================================
-  // CALCULATE BOAT OPTION AMOUNT
+  // CALCULATE BOAT AMOUNT
   // ======================================================
   void calculateBoat(int normCode, double value) {
     final count = double.tryParse(boatControllers[normCode]!.text) ?? 0;
@@ -99,7 +109,7 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
   }
 
   // ======================================================
-  // CALCULATE NET OPTION AMOUNT
+  // CALCULATE NET AMOUNT
   // ======================================================
   void calculateNet(int normCode, double value) {
     final count = double.tryParse(netControllers[normCode]!.text) ?? 0;
@@ -118,25 +128,18 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
         _requiredLabel("Assistance Type"),
         const SizedBox(height: 12),
 
-        // ======================================================
         // 🚤 Boat Checkbox
-        // ======================================================
         CheckboxListTile(
           value: boatSelected,
-          title: const Text(
-            "Boat",
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
+          title: const Text("Boat",
+              style: TextStyle(fontWeight: FontWeight.w600)),
           onChanged: (val) {
             setState(() {
               boatSelected = val ?? false;
 
               if (boatSelected) {
-                widget.model.assistanceTypeList.add("SUBTYPE5");
                 fetchSubtypeNorms("SUBTYPE5");
               } else {
-                widget.model.assistanceTypeList.remove("SUBTYPE5");
-
                 selectedBoatNormCodes.clear();
                 boatControllers.clear();
                 boatCalculatedAmounts.clear();
@@ -147,25 +150,18 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
           },
         ),
 
-        // ======================================================
         // 🎣 Net Checkbox
-        // ======================================================
         CheckboxListTile(
           value: netSelected,
-          title: const Text(
-            "Net",
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
+          title: const Text("Net",
+              style: TextStyle(fontWeight: FontWeight.w600)),
           onChanged: (val) {
             setState(() {
               netSelected = val ?? false;
 
               if (netSelected) {
-                widget.model.assistanceTypeList.add("SUBTYPE6");
                 fetchSubtypeNorms("SUBTYPE6");
               } else {
-                widget.model.assistanceTypeList.remove("SUBTYPE6");
-
                 selectedNetNormCodes.clear();
                 netControllers.clear();
                 netCalculatedAmounts.clear();
@@ -176,67 +172,22 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
           },
         ),
 
-        // ======================================================
-        // 🚤 Boat Specific Details
-        // ======================================================
         if (boatSelected) _buildBoatSection(),
-
-        // ======================================================
-        // 🎣 Net Specific Details
-        // ======================================================
         if (netSelected) _buildNetSection(),
-
-        const SizedBox(height: 15),
-
-        // ======================================================
-        // ✅ Total Eligible Amount Display
-        // ======================================================
-        // Container(
-        //   padding: const EdgeInsets.all(14),
-        //   decoration: BoxDecoration(
-        //     color: Colors.green.shade50,
-        //     borderRadius: BorderRadius.circular(12),
-        //     border: Border.all(color: Colors.green),
-        //   ),
-        //   child: Row(
-        //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //     children: [
-        //       const Text(
-        //         "Total Eligible Amount",
-        //         style: TextStyle(fontWeight: FontWeight.bold),
-        //       ),
-        //       ValueListenableBuilder<double>(
-        //         valueListenable: widget.model.amountNotifier,
-        //         builder: (_, value, __) => Text(
-        //           "₹ ${value.toStringAsFixed(0)}",
-        //           style: const TextStyle(
-        //             fontWeight: FontWeight.bold,
-        //             fontSize: 16,
-        //             color: Colors.green,
-        //           ),
-        //         ),
-        //       ),
-        //     ],
-        //   ),
-        // ),
-      
       ],
     );
   }
 
   // ======================================================
-  // 🚤 BOAT SECTION UI
+  // 🚤 BOAT SECTION
   // ======================================================
   Widget _buildBoatSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Divider(),
-        const SizedBox(height: 8),
-        const Text(
-          "Boat Specific Details",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-        ),
+        const Text("Boat Details",
+            style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
 
         if (loadingBoat)
@@ -248,18 +199,12 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
               final value = double.tryParse(norm["value"].toString()) ?? 0;
 
               boatControllers.putIfAbsent(
-                normCode,
-                () => TextEditingController(),
-              );
+                  normCode, () => TextEditingController());
 
               return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CheckboxListTile(
-                    title: Text(
-                      norm["option"].toString().toUpperCase(),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
+                    title: Text(norm["option"].toString().toUpperCase()),
                     value: selectedBoatNormCodes.contains(normCode),
                     onChanged: (val) {
                       setState(() {
@@ -276,23 +221,12 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
                   ),
 
                   if (selectedBoatNormCodes.contains(normCode)) ...[
-                    _requiredLabel("Total no. of boats (${norm["option"]})"),
+                    _requiredLabel("Total no. of boats"),
                     _numberField(
                       controller: boatControllers[normCode]!,
                       onChanged: (_) => calculateBoat(normCode, value),
                     ),
-                    _readonlyField(
-                      "Amount per boat",
-                      value.toStringAsFixed(0),
-                    ),
-                    _readonlyField(
-                      "Calculated Eligible Amount",
-                      (boatCalculatedAmounts[normCode] ?? 0)
-                          .toStringAsFixed(0),
-                    ),
                   ],
-
-                  const SizedBox(height: 12),
                 ],
               );
             }).toList(),
@@ -302,18 +236,15 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
   }
 
   // ======================================================
-  // 🎣 NET SECTION UI
+  // 🎣 NET SECTION
   // ======================================================
   Widget _buildNetSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Divider(),
-        const SizedBox(height: 8),
-        const Text(
-          "Fishing Net Specific Details",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-        ),
+        const Text("Net Details",
+            style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
 
         if (loadingNet)
@@ -325,18 +256,12 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
               final value = double.tryParse(norm["value"].toString()) ?? 0;
 
               netControllers.putIfAbsent(
-                normCode,
-                () => TextEditingController(),
-              );
+                  normCode, () => TextEditingController());
 
               return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CheckboxListTile(
-                    title: Text(
-                      norm["option"].toString().toUpperCase(),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
+                    title: Text(norm["option"].toString().toUpperCase()),
                     value: selectedNetNormCodes.contains(normCode),
                     onChanged: (val) {
                       setState(() {
@@ -353,23 +278,12 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
                   ),
 
                   if (selectedNetNormCodes.contains(normCode)) ...[
-                    _requiredLabel("Total no. of nets (${norm["option"]})"),
+                    _requiredLabel("Total no. of nets"),
                     _numberField(
                       controller: netControllers[normCode]!,
                       onChanged: (_) => calculateNet(normCode, value),
                     ),
-                    _readonlyField(
-                      "Amount per net",
-                      value.toStringAsFixed(0),
-                    ),
-                    _readonlyField(
-                      "Calculated Eligible Amount",
-                      (netCalculatedAmounts[normCode] ?? 0)
-                          .toStringAsFixed(0),
-                    ),
                   ],
-
-                  const SizedBox(height: 12),
                 ],
               );
             }).toList(),
@@ -385,42 +299,10 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
     return Row(
       children: [
         Text(label,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+            style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(width: 4),
         const Text("*", style: TextStyle(color: Colors.red)),
       ],
-    );
-  }
-
-  Widget _readonlyField(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade400),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            Text(
-              "₹ $value",
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -429,7 +311,7 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
     required Function(String) onChanged,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.only(top: 8),
       child: TextFormField(
         controller: controller,
         keyboardType: TextInputType.number,

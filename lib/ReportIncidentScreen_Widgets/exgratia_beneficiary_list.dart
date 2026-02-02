@@ -25,6 +25,8 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
   static const String _docApiBase =
       "https://relief.megrevenuedm.gov.in/stagingapi/drms/v-1/app/api/fetchFile";
 
+  // static const String _docApiBase = "http://10.179.2.219:8083/drms/v-1/app/api/fetchFile";
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 700;

@@ -135,25 +135,34 @@ class _HousingDamageAssistanceWidgetState
   // UPDATE TOTAL AMOUNT
   // ======================================================
   void updateTotalAmount() {
-    double total = 0;
+  double total = 0;
 
-    if (selectedNormCode != null) total += normValue;
-    if (cattleShedSelected) total += cattleNormValue;
+  if (selectedNormCode != null) total += normValue;
+  if (cattleShedSelected) total += cattleNormValue;
 
-    widget.model.amountNotifier.value = total;
+  widget.model.amountNotifier.value = total;
 
-    widget.model.selectedNormCodes.clear();
+  // Clear previous selections
+  widget.model.selectedNormCodes.clear();
 
-    if (selectedNormCode != null) {
-      widget.model.selectedNormCodes.add(selectedNormCode!);
-    }
-
-    if (cattleShedSelected && cattleNormCode != null) {
-      widget.model.selectedNormCodes.add(cattleNormCode!);
-    }
-
-    debugPrint("✅ TOTAL HOUSING AMOUNT = ₹$total");
+  // Add House Norm
+  if (selectedNormCode != null) {
+    widget.model.selectedNormCodes.add(selectedNormCode!);
   }
+
+  // Add Cattle Shed Norm
+  if (cattleShedSelected && cattleNormCode != null) {
+    widget.model.selectedNormCodes.add(cattleNormCode!);
+  }
+
+  // ✅ PRINT ALL SELECTED NORMS
+  debugPrint("====================================");
+  debugPrint("✅ Selected Norm Codes List:");
+  debugPrint(widget.model.selectedNormCodes.toString());
+  debugPrint("✅ TOTAL HOUSING AMOUNT = ₹$total");
+  debugPrint("====================================");
+}
+
 
   // ======================================================
   // UI BUILD
@@ -286,6 +295,7 @@ class _HousingDamageAssistanceWidgetState
               ),
               onChanged: (val) {
                 if (val != null) {
+                  debugPrint("✅ Selected House Subtype Norm Code = $val");
                   selectSubtype(val);
                 }
               },

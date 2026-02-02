@@ -598,4 +598,35 @@ class APIService {
       return null;
     }
   }
+
+  Future<List<RequiredDocument>> fetchDocumentsMulti(
+  List<int> normCodes,
+  String firNo,
+) async {
+  String query = normCodes.map((e) => "norms=$e").join("&");
+
+  final response = await CustomHTTPRequest().get(
+    "${drmsURL}getalldocumentbynormcodes?$query&fir=$firNo",
+  );
+
+  debugPrint("Url: ${drmsURL}getalldocumentbynormcodes?$query&fir=$firNo");
+  debugPrint("Fetch Documents Multi Response: ${response.body}");
+
+  if (response.statusCode == 200) {
+    final decoded = jsonDecode(response.body);
+
+    if (decoded is List) {
+      return decoded.map((e) => RequiredDocument.fromJson(e)).toList();
+    }
+
+    if (decoded is Map && decoded["data"] is List) {
+      return (decoded["data"] as List)
+          .map((e) => RequiredDocument.fromJson(e))
+          .toList();
+    }
+  }
+
+  return [];
+}
+
 }
