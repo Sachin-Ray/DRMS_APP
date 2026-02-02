@@ -1,15 +1,21 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:drms/ReportIncidentScreen_Widgets/accordion_section.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/amount_widget.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/bank_details_widget.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/beneficiary_details_widget.dart';
-import 'package:drms/ReportIncidentScreen_Widgets/beneficiary_documents_widget.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/housing_damage_assistance_widget.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/remarks_widget.dart';
 
 import 'package:drms/model/Block.dart';
 import 'package:drms/model/Village.dart';
+import 'package:drms/model/RequiredDocument.dart';
 import 'package:drms/services/APIService.dart';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:mime/mime.dart';
 
 import '../model/beneficiary_models.dart';
 
@@ -33,93 +39,237 @@ class AddHousingDamageBeneficiaryDialog extends StatefulWidget {
 class _AddHousingDamageBeneficiaryDialogState
     extends State<AddHousingDamageBeneficiaryDialog> {
   final _formKey = GlobalKey<FormState>();
+  final ScrollController _scrollController = ScrollController();
 
-  // ✅ MODELS
+  // MODELS
   final BeneficiaryDetails beneficiary = BeneficiaryDetails();
   final AssistanceDetails assistance = AssistanceDetails();
   final BankDetails bank = BankDetails();
-  final BeneficiaryDocuments documents = BeneficiaryDocuments();
 
-  // ✅ Accordion states
-  bool b1 = true;
-  bool b2 = false;
-  bool b3 = false;
-  bool b4 = false;
-  bool b5 = false;
-  bool b6 = false;
+  // Accordion
+  bool b1 = true, b2 = true, b3 = true, b4 = true, b5 = true, b6 = true;
 
-  @override
-  void initState() {
-    super.initState();
-    _saveHousingBeneficiary();
-  }
+  bool isSubmitting = false;
+  bool uploadingDocs = false;
+
+  bool freezeForm = false;
+  bool beneficiarySaved = false;
+
+  String? generatedBeneficiaryId;
+
+  bool showRequiredDocs = false;
+  List<RequiredDocument> requiredDocs = [];
+
+  Map<int, File?> uploadedDocs = {};
 
   @override
   void dispose() {
     assistance.amountNotifier.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  
+  // ======================================================
+  // CONFIRMATION POPUP
+  // ======================================================
+  Future<bool?> _showConfirmDialog() {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Confirmation"),
+        content: const Text(
+          "Are you sure you want to save beneficiary details?\n"
+          "After saving, you must upload all mandatory enclosures.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("NO"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("YES"),
+          ),
+        ],
+      ),
+    );
+  }
 
   // ======================================================
-  // SAVE FUNCTION
+  // ERROR DIALOG
   // ======================================================
-  void _saveHousingBeneficiary() async{
-    // if (!_formKey.currentState!.validate()) {
-    //   setState(() => b1 = true);
-    //   return;
-    // }
+  Future<void> _showError(String msg) {
+    return showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Error"),
+        content: Text(msg),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
 
-    // if (assistance.assistanceTypeList.isEmpty) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(
-    //       content: Text("Please select at least one Housing Assistance type"),
-    //       backgroundColor: Colors.red,
-    //     ),
-    //   );
-    //   return;
-    // }
+  // ======================================================
+  // SUBMIT HOUSING BENEFICIARY
+  // ======================================================
+  Future<void> _submitHousingBeneficiary() async {
+    if (!_formKey.currentState!.validate()) {
+      setState(() => b1 = true);
+      return;
+    }
 
-    // final payload = {
-    //   "beneficiary": beneficiary.toJson(),
-    //   "assistance": assistance.toJson(),
-    //   "bank": bank.toJson(),
-    //   "documents": documents.files
-    //       .map((f) => {"filename": f.path.split('/').last, "path": f.path})
-    //       .toList(),
-    // };
-    
+    if (assistance.normCodes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select at least one Housing Assistance type"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final confirm = await _showConfirmDialog();
+    if (confirm != true) return;
+
+    setState(() => isSubmitting = true);
+
+    // ======================================================
+    // ✅ HOUSING PAYLOAD (Backend Format)
+    // ======================================================
     final payload = {
-  "beneficiaryName": "Ajnabi",
-  "ageCategory": "adult",
-  "gender": "M",
-  "blockcode": 7183,
-  "villagecode": 278072,
-  "ifsc": "SBIN0000054",
-  "bankName": "STATE BANK OF INDIA",
-  "branchCode": "SBIN00054",
-  "acNumber": "12345678901",
-  "remarks": "Relief assistance for flood damage",
-  "firNo": "PR-EWKH-MAIRANG-20250325-1",
-  "assistanceHead": "AH-HU",
-  "normSelect": [38],
-  "IspuccaOrKutcha":40
-};
+      "beneficiaryName": beneficiary.name,
+      "ageCategory": beneficiary.ageCategory,
+      "gender": beneficiary.gender,
+      "blockcode": beneficiary.blockCode,
+      "villagecode": beneficiary.village,
 
-     debugPrint("Fishery Beneficiary Payload: $payload");
+      "ifsc": bank.ifsc,
+      "bankName": bank.bankName,
+      "branchCode": bank.branchCode,
+      "acNumber": bank.accountNumber,
+
+      "remarks": assistance.remarks,
+      "firNo": widget.firNo,
+
+      // ✅ Housing Assistance Head
+      "assistanceHead": "AH-HU",
+
+      // ✅ Multi Norm Select
+      "normSelect": assistance.normCodes,
+
+      // ✅ Extra Housing Field (Pucca/Kutcha)
+      "IspuccaOrKutcha":
+          assistance.normCodes.isNotEmpty ? assistance.normCodes.first : null,
+    };
+
+    debugPrint("🏠 HOUSING PAYLOAD = $payload");
 
     final result = await APIService.instance.submitSaveAssistanceForm(payload);
 
-    
+    setState(() => isSubmitting = false);
+
     if (result != null && result["status"] == "SUCCESS") {
-      debugPrint("Housing Damage Beneficiary saved successfully.");
+      generatedBeneficiaryId = result["data"]["body"].toString().trim();
+
+      // ======================================================
+      // ✅ Fetch Required Docs for Multi Norms
+      // ======================================================
+      requiredDocs = await APIService.instance.fetchDocumentsMulti(
+        assistance.normCodes,
+        widget.firNo,
+      );
+
+      setState(() {
+        freezeForm = true;
+        beneficiarySaved = true;
+        showRequiredDocs = true;
+        b5 = true;
+      });
+
+      // Scroll to upload section
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      _showError("Submission failed. Please try again.");
+    }
+  }
+
+  // ======================================================
+  // PICK FILE
+  // ======================================================
+  Future<void> _pickFile(int documentCode) async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
+    );
+
+    if (picked != null && picked.files.single.path != null) {
+      setState(() {
+        uploadedDocs[documentCode] = File(picked.files.single.path!);
+      });
+    }
+  }
+
+  bool get allDocsUploaded {
+    return requiredDocs.every((doc) => uploadedDocs[doc.documentCode] != null);
+  }
+
+  // ======================================================
+  // UPLOAD ENCLOSURES
+  // ======================================================
+  Future<void> _uploadEnclosures() async {
+    if (!allDocsUploaded) {
+      _showError("All enclosures are mandatory. Please upload all files.");
+      return;
+    }
+
+    setState(() => uploadingDocs = true);
+
+    List<Map<String, dynamic>> docsPayload = [];
+
+    for (final doc in requiredDocs) {
+      final file = uploadedDocs[doc.documentCode]!;
+      final bytes = await file.readAsBytes();
+      final mimeType = lookupMimeType(file.path) ?? "application/octet-stream";
+
+      docsPayload.add({
+        "filename": doc.documentName,
+        "contentType": mimeType,
+        "base64Data": base64Encode(bytes),
+        "documentCode": doc.documentCode,
+      });
+    }
+
+    final success = await APIService.instance.uploadBeneficiaryDocuments(
+      beneficiaryId: generatedBeneficiaryId!,
+      documents: docsPayload,
+    );
+
+    setState(() => uploadingDocs = false);
+
+    if (success) {
       Navigator.pop(context, true);
 
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("✅ Housing Beneficiary + Enclosures Uploaded"),
+          backgroundColor: Colors.green,
+        ),
+      );
     } else {
-      debugPrint("Error saving Housing Damage Beneficiary: ${result?["message"]}");
+      _showError("Upload failed. Please try again.");
     }
-  
   }
 
   // ======================================================
@@ -135,12 +285,10 @@ class _AddHousingDamageBeneficiaryDialogState
         child: Form(
           key: _formKey,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               // ================= HEADER =================
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.all(16),
                 decoration: const BoxDecoration(
                   color: Color(0xff001E3C),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -168,72 +316,115 @@ class _AddHousingDamageBeneficiaryDialogState
               // ================= BODY =================
               Flexible(
                 child: SingleChildScrollView(
+                  controller: _scrollController,
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      // ✅ Beneficiary Details
-                      AccordionSection(
-                        title: "Beneficiary Details",
-                        expanded: b1,
-                        onToggle: () => setState(() => b1 = !b1),
-                        children: [
-                          BeneficiaryDetailsWidget(
-                            model: beneficiary,
-                            blocks: widget.blocks,
-                            villages: widget.villages,
+                      if (beneficiarySaved)
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ],
+                          child: const Text(
+                            "✅ Beneficiary Saved Successfully. Upload enclosures below.",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+
+                      AbsorbPointer(
+                        absorbing: freezeForm,
+                        child: Column(
+                          children: [
+                            AccordionSection(
+                              title: "Beneficiary Details",
+                              expanded: b1,
+                              onToggle: () => setState(() => b1 = !b1),
+                              children: [
+                                BeneficiaryDetailsWidget(
+                                  model: beneficiary,
+                                  blocks: widget.blocks,
+                                  villages: widget.villages,
+                                ),
+                              ],
+                            ),
+                            AccordionSection(
+                              title: "Housing Assistance",
+                              expanded: b2,
+                              onToggle: () => setState(() => b2 = !b2),
+                              children: [
+                                HousingDamageAssistanceWidget(model: assistance)
+                              ],
+                            ),
+                            AccordionSection(
+                              title: "Amount Eligible",
+                              expanded: b3,
+                              onToggle: () => setState(() => b3 = !b3),
+                              children: [AmountWidget(model: assistance)],
+                            ),
+                            AccordionSection(
+                              title: "Bank Details",
+                              expanded: b4,
+                              onToggle: () => setState(() => b4 = !b4),
+                              children: [BankDetailsWidget(model: bank)],
+                            ),
+                            AccordionSection(
+                              title: "Remarks",
+                              expanded: b6,
+                              onToggle: () => setState(() => b6 = !b6),
+                              children: [RemarksWidget(model: assistance)],
+                            ),
+                          ],
+                        ),
                       ),
 
-                      // ✅ Housing Assistance
-                      AccordionSection(
-                        title: "Housing Assistance Specific Details",
-                        expanded: b2,
-                        onToggle: () => setState(() => b2 = !b2),
-                        children: [
-                          HousingDamageAssistanceWidget(model: assistance),
-                        ],
-                      ),
+                      // ================= UPLOAD SECTION =================
+                      if (showRequiredDocs)
+                        AccordionSection(
+                          title: "Upload Enclosures (Mandatory)",
+                          expanded: b5,
+                          onToggle: () => setState(() => b5 = !b5),
+                          children: [
+                            Column(
+                              children: requiredDocs.map((doc) {
+                                final file = uploadedDocs[doc.documentCode];
 
-                      // ✅ Amount
-                      AccordionSection(
-                        title: "Amount Eligible As Per SDRF Norms",
-                        expanded: b3,
-                        onToggle: () => setState(() => b3 = !b3),
-                        children: [
-                          AmountWidget(model: assistance),
-                        ],
-                      ),
-
-                      // ✅ Bank Details
-                      AccordionSection(
-                        title: "Beneficiary Bank Account Details",
-                        expanded: b4,
-                        onToggle: () => setState(() => b4 = !b4),
-                        children: [
-                          BankDetailsWidget(model: bank),
-                        ],
-                      ),
-
-                      // ✅ Remarks
-                      AccordionSection(
-                        title: "Remarks",
-                        expanded: b6,
-                        onToggle: () => setState(() => b6 = !b6),
-                        children: [
-                          RemarksWidget(model: assistance),
-                        ],
-                      ),
-
-                      // ✅ Documents
-                      AccordionSection(
-                        title: "Documents",
-                        expanded: b5,
-                        onToggle: () => setState(() => b5 = !b5),
-                        children: [
-                          BeneficiaryDocumentsWidget(model: documents),
-                        ],
-                      ),
+                                return Card(
+                                  child: ListTile(
+                                    title: Text("${doc.documentName} *"),
+                                    subtitle: file == null
+                                        ? const Text("No file selected")
+                                        : Text(
+                                            file.path.split("/").last,
+                                            style: const TextStyle(
+                                              color: Colors.green,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                    trailing: ElevatedButton(
+                                      onPressed: () =>
+                                          _pickFile(doc.documentCode),
+                                      child:
+                                          Text(file == null ? "Choose" : "Change"),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.cloud_upload),
+                              label: uploadingDocs
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                  : const Text("Upload All Enclosures"),
+                              onPressed:
+                                  uploadingDocs ? null : _uploadEnclosures,
+                            )
+                          ],
+                        ),
                     ],
                   ),
                 ),
@@ -242,22 +433,11 @@ class _AddHousingDamageBeneficiaryDialogState
               // ================= FOOTER =================
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text("Close"),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _saveHousingBeneficiary,
-                        child: const Text("Save"),
-                      ),
-                    ),
-                  ],
+                child: ElevatedButton(
+                  onPressed: isSubmitting ? null : _submitHousingBeneficiary,
+                  child: isSubmitting
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text("Save Housing Beneficiary"),
                 ),
               ),
             ],

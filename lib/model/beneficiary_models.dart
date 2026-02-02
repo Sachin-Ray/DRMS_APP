@@ -38,6 +38,8 @@ int noOfLargeAnimal = 0;
 int noOfSmallAnimal = 0;
 int noOfPoultry = 0;
 
+ int? isPuccaOrKutcha;
+
   /// Selected Norm Codes
   List<int> get selectedNormCodes {
   if (normCodes.isNotEmpty) return normCodes; // Handloom

@@ -17,34 +17,19 @@ class HousingDamageAssistanceWidget extends StatefulWidget {
 
 class _HousingDamageAssistanceWidgetState
     extends State<HousingDamageAssistanceWidget> {
-  // ======================================================
-  // MAIN CHECKBOX SELECTION
-  // ======================================================
   bool houseDamageSelected = false;
   bool cattleShedSelected = false;
 
-  // ======================================================
-  // HOUSE DAMAGE TYPE RADIO
-  // ======================================================
   String? selectedHouseType;
 
-  // ======================================================
-  // HOUSE SUBTYPE LIST FROM API
-  // ======================================================
   bool loadingSubtypes = false;
   List<Map<String, dynamic>> houseSubtypes = [];
 
   int? selectedNormCode;
 
-  // ======================================================
-  // HOUSING NORM AMOUNT
-  // ======================================================
   bool loadingNorm = false;
   double normValue = 0;
 
-  // ======================================================
-  // CATTLE SHED AMOUNT
-  // ======================================================
   bool loadingCattleNorm = false;
   double cattleNormValue = 0;
   int? cattleNormCode;
@@ -58,6 +43,9 @@ class _HousingDamageAssistanceWidgetState
       houseSubtypes.clear();
       selectedNormCode = null;
       normValue = 0;
+
+      // ✅ Reset Pucca/Kutcha
+      widget.model.isPuccaOrKutcha = null;
     });
 
     final result = await APIService.instance.getHouseSubtypeByHouseType(
@@ -70,7 +58,7 @@ class _HousingDamageAssistanceWidgetState
       loadingSubtypes = false;
     });
 
-    // ✅ Hut Auto Select
+    // Hut Auto Select
     if (houseType == "Hut" && houseSubtypes.isNotEmpty) {
       final autoNorm = houseSubtypes.first["norm_code"];
       selectSubtype(autoNorm);
@@ -78,7 +66,7 @@ class _HousingDamageAssistanceWidgetState
   }
 
   // ======================================================
-  // FETCH NORM DETAILS (HOUSE DAMAGE)
+  // FETCH NORM DETAILS
   // ======================================================
   Future<void> selectSubtype(int normCode) async {
     setState(() {
@@ -90,8 +78,7 @@ class _HousingDamageAssistanceWidgetState
     final normData = await APIService.instance.getNormByNormCode(normCode);
 
     setState(() {
-      final valueStr = normData?.value?.toString() ?? "0";
-      normValue = double.tryParse(valueStr) ?? 0;
+      normValue = double.tryParse(normData?.value?.toString() ?? "0") ?? 0;
       loadingNorm = false;
     });
 
@@ -108,7 +95,6 @@ class _HousingDamageAssistanceWidgetState
       cattleNormCode = null;
     });
 
-    // ✅ Step 1: Get Norm Code
     final normCode =
         await APIService.instance.getNormCodeByHousingAssistType("SUBTYPE8");
 
@@ -119,12 +105,11 @@ class _HousingDamageAssistanceWidgetState
 
     cattleNormCode = normCode;
 
-    // ✅ Step 2: Fetch Norm Value
     final normData = await APIService.instance.getNormByNormCode(normCode);
 
     setState(() {
-      final valueStr = normData?.value?.toString() ?? "0";
-      cattleNormValue = double.tryParse(valueStr) ?? 0;
+      cattleNormValue =
+          double.tryParse(normData?.value?.toString() ?? "0") ?? 0;
       loadingCattleNorm = false;
     });
 
@@ -132,40 +117,46 @@ class _HousingDamageAssistanceWidgetState
   }
 
   // ======================================================
-  // UPDATE TOTAL AMOUNT
+  // ✅ UPDATE TOTAL + STORE CORRECT PAYLOAD VALUES
   // ======================================================
   void updateTotalAmount() {
-  double total = 0;
+    double total = 0;
 
-  if (selectedNormCode != null) total += normValue;
-  if (cattleShedSelected) total += cattleNormValue;
+    if (selectedNormCode != null) total += normValue;
+    if (cattleShedSelected) total += cattleNormValue;
 
-  widget.model.amountNotifier.value = total;
+    widget.model.amountNotifier.value = total;
 
-  // Clear previous selections
-  widget.model.selectedNormCodes.clear();
+    // ==============================
+    // ✅ normSelect should contain ONLY main norm
+    // ==============================
+    widget.model.normCodes.clear();
 
-  // Add House Norm
-  if (selectedNormCode != null) {
-    widget.model.selectedNormCodes.add(selectedNormCode!);
+    if (selectedNormCode != null) {
+      widget.model.normCodes.add(selectedNormCode!);
+    }
+
+    // ==============================
+    // ✅ Store Pucca/Kutcha separately
+    // ==============================
+    if (selectedHouseType != null &&
+        houseSubtypes.isNotEmpty &&
+        selectedNormCode != null) {
+      widget.model.isPuccaOrKutcha = selectedNormCode;
+    }
+
+    // ==============================
+    // ✅ Print Debug
+    // ==============================
+    debugPrint("====================================");
+    debugPrint("🏠 Housing normSelect = ${widget.model.normCodes}");
+    debugPrint("🏠 Pucca/Kutcha = ${widget.model.isPuccaOrKutcha}");
+    debugPrint("🏠 TOTAL HOUSING AMOUNT = ₹$total");
+    debugPrint("====================================");
   }
-
-  // Add Cattle Shed Norm
-  if (cattleShedSelected && cattleNormCode != null) {
-    widget.model.selectedNormCodes.add(cattleNormCode!);
-  }
-
-  // ✅ PRINT ALL SELECTED NORMS
-  debugPrint("====================================");
-  debugPrint("✅ Selected Norm Codes List:");
-  debugPrint(widget.model.selectedNormCodes.toString());
-  debugPrint("✅ TOTAL HOUSING AMOUNT = ₹$total");
-  debugPrint("====================================");
-}
-
 
   // ======================================================
-  // UI BUILD
+  // UI BUILD (UNCHANGED)
   // ======================================================
   @override
   Widget build(BuildContext context) {
@@ -175,9 +166,6 @@ class _HousingDamageAssistanceWidgetState
         _requiredLabel("Assistance Type"),
         const SizedBox(height: 12),
 
-        // ======================================================
-        // House Damage Checkbox
-        // ======================================================
         CheckboxListTile(
           value: houseDamageSelected,
           title: const Text(
@@ -193,6 +181,7 @@ class _HousingDamageAssistanceWidgetState
                 houseSubtypes.clear();
                 selectedNormCode = null;
                 normValue = 0;
+                widget.model.isPuccaOrKutcha = null;
               }
 
               updateTotalAmount();
@@ -200,9 +189,6 @@ class _HousingDamageAssistanceWidgetState
           },
         ),
 
-        // ======================================================
-        // Cattle Shed Checkbox
-        // ======================================================
         CheckboxListTile(
           value: cattleShedSelected,
           title: const Text(
@@ -226,22 +212,12 @@ class _HousingDamageAssistanceWidgetState
 
         const SizedBox(height: 16),
 
-        // ======================================================
-        // Hidden House Section
-        // ======================================================
         if (houseDamageSelected) _buildHouseDamageSection(),
-
-        // ======================================================
-        // Hidden Cattle Shed Section
-        // ======================================================
         if (cattleShedSelected) _buildCattleShedSection(),
       ],
     );
   }
 
-  // ======================================================
-  // HOUSE DAMAGE SECTION UI
-  // ======================================================
   Widget _buildHouseDamageSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,9 +244,6 @@ class _HousingDamageAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // HOUSE SUBTYPE SECTION UI
-  // ======================================================
   Widget _buildSubtypeSection() {
     if (loadingSubtypes) {
       return const Center(child: CircularProgressIndicator());
@@ -294,10 +267,7 @@ class _HousingDamageAssistanceWidgetState
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               onChanged: (val) {
-                if (val != null) {
-                  debugPrint("✅ Selected House Subtype Norm Code = $val");
-                  selectSubtype(val);
-                }
+                if (val != null) selectSubtype(val);
               },
             );
           }).toList(),
@@ -306,9 +276,6 @@ class _HousingDamageAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // CATTLE SHED SECTION UI
-  // ======================================================
   Widget _buildCattleShedSection() {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
@@ -347,9 +314,6 @@ class _HousingDamageAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // RADIO BUILDER
-  // ======================================================
   Widget _radioOption(String value) {
     return RadioListTile<String>(
       value: value,
@@ -364,14 +328,10 @@ class _HousingDamageAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // REQUIRED LABEL
-  // ======================================================
   Widget _requiredLabel(String label) {
     return Row(
       children: [
-        Text(label,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(width: 4),
         const Text("*", style: TextStyle(color: Colors.red)),
       ],
