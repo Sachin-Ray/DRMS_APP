@@ -118,13 +118,12 @@ class MyApp extends StatelessWidget {
           elevation: 0,
           shadowColor: Color(
             0x0A000000,
-          ), // Equivalent to black.withOpacity(0.04)
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(24)),
           ),
         ),
 
-        // Text styling
         textTheme: TextTheme(
           displayLarge: TextStyle(
             fontSize: 32,
@@ -175,20 +174,16 @@ class MyApp extends StatelessWidget {
           ),
         ),
 
-        // Divider theme
         dividerTheme: DividerThemeData(
           color: Color(0xffE5E7EB),
           thickness: 1,
           space: 24,
         ),
 
-        // Icon theme
         iconTheme: IconThemeData(color: Color(0xff6C63FF), size: 24),
 
-        // Scaffold and background color
         scaffoldBackgroundColor: Color(0xffFAFAFC),
 
-        // Use Material 3
         useMaterial3: true,
       ),
       home: LoginScreen(),

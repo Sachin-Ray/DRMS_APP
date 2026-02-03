@@ -124,15 +124,15 @@ class _AddHousingDamageBeneficiaryDialogState
       return;
     }
 
-    if (assistance.normCodes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select at least one Housing Assistance type"),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    // if (assistance.normCodes.isEmpty) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(
+    //       content: Text("Please select at least one Housing Assistance type"),
+    //       backgroundColor: Colors.red,
+    //     ),
+    //   );
+    //   return;
+    // }
 
     final confirm = await _showConfirmDialog();
     if (confirm != true) return;
@@ -164,8 +164,7 @@ class _AddHousingDamageBeneficiaryDialogState
       "normSelect": assistance.normCodes,
 
       // ✅ Extra Housing Field (Pucca/Kutcha)
-      "IspuccaOrKutcha":
-          assistance.normCodes.isNotEmpty ? assistance.normCodes.first : null,
+      "IspuccaOrKutcha": assistance.isPuccaOrKutcha,
     };
 
     debugPrint("🏠 HOUSING PAYLOAD = $payload");
@@ -354,7 +353,9 @@ class _AddHousingDamageBeneficiaryDialogState
                               expanded: b2,
                               onToggle: () => setState(() => b2 = !b2),
                               children: [
-                                HousingDamageAssistanceWidget(model: assistance)
+                                HousingDamageAssistanceWidget(
+                                  model: assistance,
+                                ),
                               ],
                             ),
                             AccordionSection(
@@ -405,8 +406,9 @@ class _AddHousingDamageBeneficiaryDialogState
                                     trailing: ElevatedButton(
                                       onPressed: () =>
                                           _pickFile(doc.documentCode),
-                                      child:
-                                          Text(file == null ? "Choose" : "Change"),
+                                      child: Text(
+                                        file == null ? "Choose" : "Change",
+                                      ),
                                     ),
                                   ),
                                 );
@@ -420,9 +422,10 @@ class _AddHousingDamageBeneficiaryDialogState
                                       color: Colors.white,
                                     )
                                   : const Text("Upload All Enclosures"),
-                              onPressed:
-                                  uploadingDocs ? null : _uploadEnclosures,
-                            )
+                              onPressed: uploadingDocs
+                                  ? null
+                                  : _uploadEnclosures,
+                            ),
                           ],
                         ),
                     ],
