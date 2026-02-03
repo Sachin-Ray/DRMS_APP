@@ -22,9 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   // ✅ Password toggle variable
   bool isPasswordVisible = false;
   final String baseUrl =
-      'https://relief.megrevenuedm.gov.in/stagingapi/drms/v-1/app/api';
-  // final String baseUrl =
-  //     'http://10.179.2.219:8083/drms/v-1/app/api';
+      'https://relief.megrevenuedm.gov.in/liveapi/drms/v-1/app/api';
 
   @override
   void initState() {
@@ -204,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Title
                   Text(
-                    "STAGGING\nDisaster And Relief\nMonitoring System",
+                    "Disaster And Relief\nMonitoring System",
                     textAlign: TextAlign.center,
                     style: textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
