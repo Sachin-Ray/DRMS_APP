@@ -27,7 +27,7 @@ class _AnimalHusbandryAssistanceWidgetState
   // ======================================================
   // RADIO BUTTON SELECTION
   // ======================================================
-  String? selectedAnimalType; // Milch / Draught
+  String? selectedAnimalType;
 
   // ======================================================
   // SUBTYPE LIST FROM API
@@ -35,10 +35,11 @@ class _AnimalHusbandryAssistanceWidgetState
   bool loadingSubtypes = false;
   List<Map<String, dynamic>> animalSubtypes = [];
 
-  List<int> allSelectedAnimalNorms = [];
-
-  // Selected Norm Codes (Large / Small / Poultry)
+  // Selected Norm Codes
   List<int> selectedAnimalNormCodes = [];
+
+  // Store all selected norms finally
+  List<int> allSelectedAnimalNorms = [];
 
   // ======================================================
   // DETAIL DATA FOR EACH NORM
@@ -66,6 +67,8 @@ class _AnimalHusbandryAssistanceWidgetState
     setState(() {
       loadingSubtypes = true;
       animalSubtypes.clear();
+
+      // Reset Milch/Draught Norms
       selectedAnimalNormCodes.clear();
       normDetails.clear();
       controllers.clear();
@@ -84,7 +87,7 @@ class _AnimalHusbandryAssistanceWidgetState
   }
 
   // ======================================================
-  // FETCH NORM DETAIL (Large/Small)
+  // FETCH NORM DETAIL
   // ======================================================
   Future<void> fetchNormDetail(int normCode) async {
     final detail = await APIService.instance.getNormByNormCode(normCode);
@@ -116,7 +119,6 @@ class _AnimalHusbandryAssistanceWidgetState
       poultryCalculated = 0;
     });
 
-    // Step 1: Get NormCode by AssistanceType
     final normCodeResult = await APIService.instance
         .getNormCodeByAssistanceType("SUBTYPE4");
 
@@ -127,17 +129,11 @@ class _AnimalHusbandryAssistanceWidgetState
 
     poultryNormCode = normCodeResult;
 
-    // Step 2: Get Norm Details
     final detail =
         await APIService.instance.getNormByNormCode(poultryNormCode!);
 
     if (detail != null) {
       poultryValue = detail.value.toDouble();
-    }
-
-    // Add normCode in list
-    if (!selectedAnimalNormCodes.contains(poultryNormCode)) {
-      selectedAnimalNormCodes.add(poultryNormCode!);
     }
 
     setState(() => loadingPoultry = false);
@@ -167,63 +163,105 @@ class _AnimalHusbandryAssistanceWidgetState
   }
 
   // ======================================================
-  // UPDATE GRAND TOTAL
+  // UPDATE GRAND TOTAL + STORE SELECTED NORMS
   // ======================================================
   void updateGrandTotal() {
   double total = 0;
 
-  // Add Milch/Draught calculated amounts
+  // Milch/Draught total
   calculatedAmounts.forEach((_, amt) => total += amt);
 
-  // Add Poultry amount
+  // Poultry total
   total += poultryCalculated;
 
-  // Update total amount
   widget.model.amountNotifier.value = total;
 
   // ======================================================
-  // ✅ STORE SELECTED NORMS IN ONE VARIABLE
+  // ✅ Store ALL Norm Codes Properly
   // ======================================================
   allSelectedAnimalNorms.clear();
+
+  // Add Milch/Draught norms
   allSelectedAnimalNorms.addAll(selectedAnimalNormCodes);
 
-  // ======================================================
-  // ✅ STORE IN MAIN MODEL (Handloom Style)
-  // ======================================================
+  // Add Poultry norm separately
+  if (poultrySelected && poultryNormCode != null) {
+    allSelectedAnimalNorms.add(poultryNormCode!);
+  }
+
+  // Save into main model
   widget.model.normCodes.clear();
   widget.model.normCodes.addAll(allSelectedAnimalNorms);
 
   // ======================================================
-  // ✅ PRINT SELECTED NORMS
+  // ✅ NOW STORE COUNTS PROPERLY
+  // ======================================================
+
+  int largeAnimalCount = 0;
+  int smallAnimalCount = 0;
+
+  for (int code in selectedAnimalNormCodes) {
+    int entered =
+        int.tryParse(controllers[code]?.text ?? "0") ?? 0;
+
+    // Milch Large OR Draught Large
+    if (code == 25 || code == 24) {
+      largeAnimalCount += entered;
+    }
+
+    // Milch Small OR Draught Small
+    if (code == 28 || code == 27) {
+      smallAnimalCount += entered;
+    }
+  }
+
+  // ✅ Assign into model
+  widget.model.noOfLargeAnimal = largeAnimalCount;
+  widget.model.noOfSmallAnimal = smallAnimalCount;
+
+  // Poultry Count
+  widget.model.noOfPoultry =
+      int.tryParse(poultryController.text) ?? 0;
+
+  // ======================================================
+  // DEBUG PRINT
   // ======================================================
   debugPrint("=====================================");
-  debugPrint("🐄 Selected Animal Husbandry Norm Codes:");
-  debugPrint(allSelectedAnimalNorms.toString());
-  debugPrint("✅ TOTAL Animal Husbandry Amount = ₹$total");
+  debugPrint("🐄 Selected Norm Codes = $allSelectedAnimalNorms");
+  debugPrint("🐄 noOfLargeAnimal = ${widget.model.noOfLargeAnimal}");
+  debugPrint("🐑 noOfSmallAnimal = ${widget.model.noOfSmallAnimal}");
+  debugPrint("🐔 noOfPoultry     = ${widget.model.noOfPoultry}");
+  debugPrint("✅ TOTAL Amount = ₹$total");
   debugPrint("=====================================");
 }
 
 
   // ======================================================
-  // UPDATE MODEL VALUES
+  // UPDATE MODEL VALUES (Subtype list only)
   // ======================================================
   void updateModel() {
-    widget.model.assistanceTypeList.clear();
+  widget.model.assistanceTypeList.clear();
 
-    if (milchOrDraughtSelected) {
-      widget.model.assistanceTypeList.add("SUBTYPE3");
-    }
-
-    if (poultrySelected) {
-      widget.model.assistanceTypeList.add("SUBTYPE4");
-    }
-
-    widget.model.normCodes.clear();
-widget.model.normCodes.addAll(selectedAnimalNormCodes);
-
-
-    updateGrandTotal();
+  if (milchOrDraughtSelected) {
+    widget.model.assistanceTypeList.add("SUBTYPE3");
   }
+
+  if (poultrySelected) {
+    widget.model.assistanceTypeList.add("SUBTYPE4");
+  }
+
+  // ======================================================
+  // ✅ STORE ANIMAL TYPE (Milch / Draught)
+  // ======================================================
+  if (milchOrDraughtSelected) {
+    widget.model.animalType = selectedAnimalType;
+  } else {
+    widget.model.animalType = null;
+  }
+
+  updateGrandTotal();
+}
+
 
   // ======================================================
   // CLAIM LIMIT BASED ON TYPE
@@ -265,11 +303,15 @@ widget.model.normCodes.addAll(selectedAnimalNormCodes);
               milchOrDraughtSelected = val ?? false;
 
               if (!milchOrDraughtSelected) {
-                selectedAnimalType = null;
-                animalSubtypes.clear();
-                selectedAnimalNormCodes.removeWhere(
-                    (code) => code != poultryNormCode);
-              }
+  selectedAnimalType = null;
+  widget.model.animalType = null;
+
+  animalSubtypes.clear();
+  selectedAnimalNormCodes.clear();
+  controllers.clear();
+  calculatedAmounts.clear();
+}
+
 
               updateModel();
             });
@@ -291,12 +333,11 @@ widget.model.normCodes.addAll(selectedAnimalNormCodes);
             if (poultrySelected) {
               await fetchPoultryNorm();
             } else {
+              poultryNormCode = null;
+              poultryValue = 0;
               poultryCalculated = 0;
               poultryController.clear();
 
-              if (poultryNormCode != null) {
-                selectedAnimalNormCodes.remove(poultryNormCode);
-              }
               updateModel();
             }
           },
@@ -304,10 +345,7 @@ widget.model.normCodes.addAll(selectedAnimalNormCodes);
 
         const SizedBox(height: 14),
 
-        // Hidden Milch/Draught Section
         if (milchOrDraughtSelected) _buildMilchDraughtSection(),
-
-        // Hidden Poultry Section
         if (poultrySelected) _buildPoultrySection(),
       ],
     );
@@ -337,6 +375,7 @@ widget.model.normCodes.addAll(selectedAnimalNormCodes);
           onChanged: (val) {
             setState(() {
               selectedAnimalType = val;
+              widget.model.animalType = val; 
               fetchAnimalSubtypes("Milch");
             });
           },
@@ -402,7 +441,6 @@ widget.model.normCodes.addAll(selectedAnimalNormCodes);
       children: [
         const Divider(),
         const SizedBox(height: 10),
-
         const Text(
           "Poultry Specific Details",
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
@@ -420,21 +458,13 @@ widget.model.normCodes.addAll(selectedAnimalNormCodes);
             onChanged: (_) => calculatePoultry(),
           ),
 
-          const Padding(
-            padding: EdgeInsets.only(top: 6),
-            child: Text(
-              "Claim limit: Maximum 100 birds animals.",
-              style: TextStyle(color: Colors.red, fontSize: 12),
-            ),
-          ),
-
           _readonlyField(
-            "Amount for poultry (₹)",
+            "Amount per bird (₹)",
             poultryValue.toStringAsFixed(0),
           ),
 
           _readonlyField(
-            "Calculated amount eligible (₹)",
+            "Calculated Eligible Amount (₹)",
             poultryCalculated.toStringAsFixed(0),
           ),
         ]
@@ -443,7 +473,7 @@ widget.model.normCodes.addAll(selectedAnimalNormCodes);
   }
 
   // ======================================================
-  // Hidden Norm Fields UI
+  // Norm Fields UI
   // ======================================================
   Widget _buildNormFields(int normCode) {
     final value = normDetails[normCode]?["value"] ?? 0;
@@ -452,20 +482,12 @@ widget.model.normCodes.addAll(selectedAnimalNormCodes);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _requiredLabel("Total no. of animal"),
+        _requiredLabel("Total no. of animals"),
 
         _numberField(
           controller: controllers[normCode]!,
           max: maxLimit,
           onChanged: (_) => calculateAmount(normCode),
-        ),
-
-        Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Text(
-            "Claim limit: Maximum $maxLimit animals allowed.",
-            style: const TextStyle(color: Colors.red, fontSize: 12),
-          ),
         ),
 
         _readonlyField("Amount per animal (₹)", value.toStringAsFixed(0)),
@@ -551,5 +573,3 @@ widget.model.normCodes.addAll(selectedAnimalNormCodes);
     );
   }
 }
-
-

@@ -111,95 +111,107 @@ class _HousingDamageAssistanceWidgetState
   // FETCH CATTLE SHED NORM
   // ======================================================
   Future<void> fetchCattleShedNorm() async {
-    setState(() {
-      loadingCattleNorm = true;
-      cattleNormValue = 0;
-      cattleNormCode = null;
-    });
+  setState(() {
+    loadingCattleNorm = true;
+    cattleNormValue = 0;
+    cattleNormCode = null;
+  });
 
-    final normCode =
-        await APIService.instance.getNormCodeByHousingAssistType("SUBTYPE8");
+  final normCode =
+      await APIService.instance.getNormCodeByHousingAssistType("SUBTYPE8");
 
-    if (normCode == null) {
-      setState(() => loadingCattleNorm = false);
-      return;
-    }
-
-    cattleNormCode = normCode;
-
-    final normData = await APIService.instance.getNormByNormCode(normCode);
-
-    setState(() {
-      cattleNormValue =
-          double.tryParse(normData?.value?.toString() ?? "0") ?? 0;
-      loadingCattleNorm = false;
-    });
-
-    updateTotalAmount();
+  if (normCode == null) {
+    setState(() => loadingCattleNorm = false);
+    return;
   }
+
+  // ✅ Ensure state updates
+  setState(() {
+    cattleNormCode = normCode;
+  });
+
+  final normData = await APIService.instance.getNormByNormCode(normCode);
+
+  setState(() {
+    cattleNormValue =
+        double.tryParse(normData?.value?.toString() ?? "0") ?? 0;
+    loadingCattleNorm = false;
+  });
+
+  updateTotalAmount();
+}
+
 
   // ======================================================
   // ✅ UPDATE TOTAL + STORE CORRECT VALUES
   // ======================================================
   void updateTotalAmount() {
-    double total = 0;
+  double total = 0;
 
-    if (selectedNormCode != null) total += normValue;
-    if (cattleShedSelected) total += cattleNormValue;
+  // ============================
+  // Calculate Total Amount
+  // ============================
+  if (selectedNormCode != null) total += normValue;
+  if (cattleShedSelected) total += cattleNormValue;
 
-    widget.model.amountNotifier.value = total;
+  widget.model.amountNotifier.value = total;
 
-    // Reset Stored Values
-    widget.model.normCodes.clear();
-    widget.model.isPuccaOrKutcha = null;
+  // ============================
+  // Reset Stored Values
+  // ============================
+  widget.model.normCodes.clear();
+  widget.model.isPuccaOrKutcha = null;
 
-    // ======================================================
-    // CASE 1: Fully Damaged/Severely Damaged
-    // ======================================================
-    if (selectedHouseType == "Fully Damaged/Severely Damaged") {
-      if (selectedNormCode != null) {
-        // normCodes = House Sub Type ID
-        widget.model.normCodes.add(selectedNormCode!);
-      }
+  // ============================
+  // ✅ Store House Damage Norm Codes
+  // ============================
 
-      if (additionalInfoNormCode != null) {
-        // Pucca/Kutcha stored separately
-        widget.model.isPuccaOrKutcha = additionalInfoNormCode;
-      }
+  // CASE 1: Fully Damaged
+  if (selectedHouseType == "Fully Damaged/Severely Damaged") {
+    if (selectedNormCode != null) {
+      widget.model.normCodes.add(selectedNormCode!);
     }
 
-    // ======================================================
-    // CASE 2: Partially Damaged
-    // ======================================================
-    else if (selectedHouseType == "Partially Damaged") {
-      if (selectedNormCode != null) {
-        // Both should be SAME ID
-        widget.model.normCodes.add(selectedNormCode!);
-        widget.model.isPuccaOrKutcha = selectedNormCode!;
-      }
+    if (additionalInfoNormCode != null) {
+      widget.model.isPuccaOrKutcha = additionalInfoNormCode;
     }
-
-    // ======================================================
-    // CASE 3: Hut
-    // ======================================================
-    else if (selectedHouseType == "Hut") {
-      if (selectedNormCode != null) {
-        widget.model.normCodes.add(selectedNormCode!);
-      }
-
-      widget.model.isPuccaOrKutcha = null;
-    }
-
-    // ======================================================
-    // PRINT DEBUG
-    // ======================================================
-    debugPrint("====================================");
-    debugPrint("🏠 House Type = $selectedHouseType");
-    debugPrint("🏠 normSelect = ${widget.model.normCodes}");
-    debugPrint("🏠 IspuccaOrKutcha = ${widget.model.isPuccaOrKutcha}");
-    debugPrint("🏠 TOTAL HOUSING AMOUNT = ₹$total");
-    debugPrint("====================================");
   }
+
+  // CASE 2: Partially Damaged
+  else if (selectedHouseType == "Partially Damaged") {
+    if (selectedNormCode != null) {
+      widget.model.normCodes.add(selectedNormCode!);
+      widget.model.isPuccaOrKutcha = selectedNormCode!;
+    }
+  }
+
+  // CASE 3: Hut
+  else if (selectedHouseType == "Hut") {
+    if (selectedNormCode != null) {
+      widget.model.normCodes.add(selectedNormCode!);
+    }
+
+    widget.model.isPuccaOrKutcha = null;
+  }
+
+  // ============================
+  // ✅ FIX: Store Cattle Shed Norm Code
+  // ============================
+  if (cattleShedSelected && cattleNormCode != null) {
+    widget.model.normCodes.add(cattleNormCode!);
+  }
+
+  // ============================
+  // DEBUG PRINT
+  // ============================
+  debugPrint("====================================");
+  debugPrint("🏠 House Type = $selectedHouseType");
+  debugPrint("🏠 House NormCodes = ${widget.model.normCodes}");
+  debugPrint("🐄 Cattle NormCode = $cattleNormCode");
+  debugPrint("🏠 IspuccaOrKutcha = ${widget.model.isPuccaOrKutcha}");
+  debugPrint("💰 TOTAL HOUSING AMOUNT = ₹$total");
+  debugPrint("====================================");
+}
 
   // ======================================================
   // UI BUILD

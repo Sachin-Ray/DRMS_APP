@@ -17,6 +17,13 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
   bool boatSelected = false;
   bool netSelected = false;
 
+  // ✅ Dynamic Norm Codes
+  int? repairBoatCode;
+  int? replacementBoatCode;
+
+  int? repairNetCode;
+  int? replacementNetCode;
+
   bool loadingBoat = false;
   List<Map<String, dynamic>> boatNorms = [];
   List<int> selectedBoatNormCodes = [];
@@ -71,32 +78,51 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
 
     widget.model.amountNotifier.value = total;
 
-    // ✅ Store norm codes
+    // ✅ Store Selected Norm Codes
     widget.model.normCodes.clear();
     widget.model.normCodes.addAll([
       ...selectedBoatNormCodes,
       ...selectedNetNormCodes,
     ]);
 
-    // ✅ Store counts properly
+    // ======================================================
+    // ✅ Store Boat Counts Dynamically
+    // ======================================================
     widget.model.noOfRepairBoat =
-        int.tryParse(boatControllers[31]?.text ?? "0") ?? 0;
+        int.tryParse(boatControllers[repairBoatCode]?.text ?? "0") ?? 0;
 
     widget.model.noOfReplacementBoat =
-        int.tryParse(boatControllers[32]?.text ?? "0") ?? 0;
+        int.tryParse(boatControllers[replacementBoatCode]?.text ?? "0") ?? 0;
 
+    // ======================================================
+    // ✅ Store Net Counts Dynamically
+    // ======================================================
     widget.model.noOfRepairNet =
-        int.tryParse(netControllers[33]?.text ?? "0") ?? 0;
+        int.tryParse(netControllers[repairNetCode]?.text ?? "0") ?? 0;
 
     widget.model.noOfReplacementNet =
-        int.tryParse(netControllers[34]?.text ?? "0") ?? 0;
+        int.tryParse(netControllers[replacementNetCode]?.text ?? "0") ?? 0;
 
+    // ======================================================
+    // DEBUG PRINT
+    // ======================================================
+    debugPrint("=====================================");
     debugPrint("🎣 Fishery Norm Codes = ${widget.model.normCodes}");
-    debugPrint("🚤 Repair Boat = ${widget.model.noOfRepairBoat}");
-    debugPrint("🚤 Replace Boat = ${widget.model.noOfReplacementBoat}");
-    debugPrint("🎣 Repair Net = ${widget.model.noOfRepairNet}");
-    debugPrint("🎣 Replace Net = ${widget.model.noOfReplacementNet}");
+
+    debugPrint("🚤 Repair Boat Code = $repairBoatCode");
+    debugPrint("🚤 Replacement Boat Code = $replacementBoatCode");
+
+    debugPrint("🎣 Repair Net Code = $repairNetCode");
+    debugPrint("🎣 Replacement Net Code = $replacementNetCode");
+
+    debugPrint("🚤 Repair Boat Count = ${widget.model.noOfRepairBoat}");
+    debugPrint("🚤 Replace Boat Count = ${widget.model.noOfReplacementBoat}");
+
+    debugPrint("🎣 Repair Net Count = ${widget.model.noOfRepairNet}");
+    debugPrint("🎣 Replace Net Count = ${widget.model.noOfReplacementNet}");
+
     debugPrint("✅ Total Fishery Amount = ₹$total");
+    debugPrint("=====================================");
   }
 
   // ======================================================
@@ -131,8 +157,10 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
         // 🚤 Boat Checkbox
         CheckboxListTile(
           value: boatSelected,
-          title: const Text("Boat",
-              style: TextStyle(fontWeight: FontWeight.w600)),
+          title: const Text(
+            "Boat",
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
           onChanged: (val) {
             setState(() {
               boatSelected = val ?? false;
@@ -153,8 +181,10 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
         // 🎣 Net Checkbox
         CheckboxListTile(
           value: netSelected,
-          title: const Text("Net",
-              style: TextStyle(fontWeight: FontWeight.w600)),
+          title: const Text(
+            "Net",
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
           onChanged: (val) {
             setState(() {
               netSelected = val ?? false;
@@ -198,8 +228,20 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
               final normCode = norm["normCode"];
               final value = double.tryParse(norm["value"].toString()) ?? 0;
 
+              final option = norm["option"].toString().toLowerCase();
+
+              // ✅ Detect Repair/Replacement Boat Codes
+              if (option.contains("repair")) {
+                repairBoatCode = normCode;
+              }
+              if (option.contains("replacement")) {
+                replacementBoatCode = normCode;
+              }
+
               boatControllers.putIfAbsent(
-                  normCode, () => TextEditingController());
+                normCode,
+                () => TextEditingController(),
+              );
 
               return Column(
                 children: [
@@ -219,7 +261,6 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
                       });
                     },
                   ),
-
                   if (selectedBoatNormCodes.contains(normCode)) ...[
                     _requiredLabel("Total no. of boats"),
                     _numberField(
@@ -255,8 +296,20 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
               final normCode = norm["normCode"];
               final value = double.tryParse(norm["value"].toString()) ?? 0;
 
+              final option = norm["option"].toString().toLowerCase();
+
+              // ✅ Detect Repair/Replacement Net Codes
+              if (option.contains("repair")) {
+                repairNetCode = normCode;
+              }
+              if (option.contains("replacement")) {
+                replacementNetCode = normCode;
+              }
+
               netControllers.putIfAbsent(
-                  normCode, () => TextEditingController());
+                normCode,
+                () => TextEditingController(),
+              );
 
               return Column(
                 children: [
@@ -276,7 +329,6 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
                       });
                     },
                   ),
-
                   if (selectedNetNormCodes.contains(normCode)) ...[
                     _requiredLabel("Total no. of nets"),
                     _numberField(
@@ -298,8 +350,7 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
   Widget _requiredLabel(String label) {
     return Row(
       children: [
-        Text(label,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(width: 4),
         const Text("*", style: TextStyle(color: Colors.red)),
       ],

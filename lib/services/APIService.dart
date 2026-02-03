@@ -253,7 +253,7 @@ class APIService {
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
-        debugPrint("ExGratia Beneficiary Response: $decoded");
+        
 
         if (decoded is Map && decoded["status"] == "SUCCESS") {
           final mainData = decoded["data"];
@@ -628,5 +628,61 @@ class APIService {
 
   return [];
 }
+
+Future<Map<String, dynamic>?> generateSOPReport({
+  required String firNo,
+  required String remarks,
+  required int villages,
+  required int households,
+  required int familyAffected,
+  required String assistanceHead,
+}) async {
+  try {
+    // ✅ Encode remarks properly
+    final encodedRemarks = Uri.encodeComponent(remarks);
+
+    // ✅ Build URL with query params
+    final url =
+        "${drmsURL}generatesop"
+        "?firNo=$firNo"
+        "&remarks=$encodedRemarks"
+        "&no_of_family_affected=$familyAffected"
+        "&no_of_village_affected=$villages"
+        "&assistance_head=$assistanceHead"
+        "&no_of_population_affected=$households";
+
+    debugPrint("📌 SOP POST Request URL: $url");
+
+    // ✅ POST Call (No body, params are in URL)
+    final response = await CustomHTTPRequest().post(
+      url,
+      "", // empty body required if method expects body param
+    );
+
+    debugPrint("📥 SOP Status Code: ${response.statusCode}");
+    debugPrint("📥 SOP Raw Response: ${response.body}");
+
+    // ✅ Success Case
+    if (response.statusCode == 200) {
+      // ❌ HTML Response Check
+      if (response.body.startsWith("<!DOCTYPE html")) {
+        debugPrint("❌ SOP API returned HTML page, not JSON");
+        return null;
+      }
+
+      return jsonDecode(response.body);
+    }
+
+    debugPrint("❌ SOP Failed: ${response.statusCode}");
+    return null;
+  } catch (e, stack) {
+    debugPrint("❌ SOP Submit Error: $e");
+    print(stack);
+    return null;
+  }
+}
+
+
+
 
 }

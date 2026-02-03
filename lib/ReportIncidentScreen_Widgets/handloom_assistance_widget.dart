@@ -111,14 +111,14 @@ class _HandloomAssistanceWidgetState extends State<HandloomAssistanceWidget> {
         // ===================================================
         // ✅ Show Selected Norm Codes (Optional Debug)
         // ===================================================
-        if (widget.model.normCodes.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(
-              "Selected Norms: ${widget.model.normCodes.join(", ")}",
-              style: const TextStyle(fontSize: 12, color: Colors.green),
-            ),
-          ),
+        // if (widget.model.normCodes.isNotEmpty)
+        //   Padding(
+        //     padding: const EdgeInsets.only(top: 6),
+        //     child: Text(
+        //       "Selected Norms: ${widget.model.normCodes.join(", ")}",
+        //       style: const TextStyle(fontSize: 12, color: Colors.green),
+        //     ),
+        //   ),
 
         if (loading)
           const Padding(

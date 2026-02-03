@@ -1,3 +1,4 @@
+import 'package:drms/ReportIncidentScreen_Widgets/add_agriculture_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/add_animal_husbandry_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/add_fishery_beneficiary_dialog.dart';
 import 'package:drms/ReportIncidentScreen_Widgets/add_gr_beneficiary_dialog.dart';
@@ -639,6 +640,11 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
                   onEdit: _editBeneficiary,
                   onDelete: _deleteBeneficiary,
                   icon: widget.icon,
+                  firNo: selectedPR!,
+                  assistanceHead: widget.assistanceHead,
+                  onRefreshBeneficiaries: () async {
+    await _loadBeneficiaries();
+  },
                 ),
 
                 if (hasMore)
@@ -703,6 +709,14 @@ class _ProposalEntryScreenState extends State<ProposalEntryScreen> {
         }
         if (widget.categoryTitle == "Housing Damage") {
           return AddHousingDamageBeneficiaryDialog(
+            blocks: [],
+            villages: [],
+            firNo: selectedPR!,
+          );
+        }
+
+        if (widget.categoryTitle == "Agriculture & Horticulture") {
+          return AddAgricultureBeneficiaryDialog(
             blocks: [],
             villages: [],
             firNo: selectedPR!,

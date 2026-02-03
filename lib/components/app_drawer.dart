@@ -2,7 +2,7 @@ import 'package:drms/screens/about_screen.dart';
 import 'package:drms/screens/contact_officials_creen.dart';
 import 'package:drms/screens/home_screen.dart';
 import 'package:drms/screens/pending_approvals.dart';
-import 'package:drms/screens/profile_screen.dart';
+// import 'package:drms/screens/profile_screen.dart';
 import 'package:drms/screens/report_incident_screen.dart';
 import 'package:drms/screens/return_report.dart';
 import 'package:drms/screens/submit_proposal.dart';
@@ -144,15 +144,15 @@ class _AppDrawerState extends State<AppDrawer> {
                         );
                       },
                     ),
-                    _subMenuTile(
-                      label: 'Submit Revised PR',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.of(context).pushReplacement(
-                          noAnimationRoute(ReturnReportScreen()),
-                        );
-                      },
-                    ),
+                    // _subMenuTile(
+                    //   label: 'Submit Revised PR',
+                    //   onTap: () {
+                    //     Navigator.pop(context);
+                    //     Navigator.of(context).pushReplacement(
+                    //       noAnimationRoute(ReturnReportScreen()),
+                    //     );
+                    //   },
+                    // ),
                   ],
                 ),
 
@@ -178,15 +178,15 @@ class _AppDrawerState extends State<AppDrawer> {
                         );
                       },
                     ),
-                    _subMenuTile(
-                      label: 'Drafted Proposal',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.of(context).pushReplacement(
-                          noAnimationRoute(PendingApprovalScreen()),
-                        );
-                      },
-                    ),
+                    // _subMenuTile(
+                    //   label: 'Drafted Proposal',
+                    //   onTap: () {
+                    //     Navigator.pop(context);
+                    //     Navigator.of(context).pushReplacement(
+                    //       noAnimationRoute(PendingApprovalScreen()),
+                    //     );
+                    //   },
+                    // ),
                   ],
                 ),
 

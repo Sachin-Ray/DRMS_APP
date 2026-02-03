@@ -150,6 +150,7 @@ class _AddAnimalHusbandryBeneficiaryDialogState
 
       // ✅ Multi Norm Select
       "normSelect": assistance.normCodes,
+      "animalType": assistance.animalType,
 
       // ✅ Animal Counts
       "noOfLargeAnimal": assistance.noOfLargeAnimal,
@@ -165,7 +166,7 @@ class _AddAnimalHusbandryBeneficiaryDialogState
       // Remarks
       "remarks": assistance.remarks,
     };
-
+    debugPrint("📝 Beneficiary Payload: $payload");
     final result = await APIService.instance.submitSaveAssistanceForm(payload);
 
     setState(() => isSubmitting = false);

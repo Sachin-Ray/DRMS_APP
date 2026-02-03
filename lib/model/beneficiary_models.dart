@@ -35,10 +35,16 @@ int noOfReplacementNet = 0;
 
 
 int noOfLargeAnimal = 0;
+String? animalType;
 int noOfSmallAnimal = 0;
 int noOfPoultry = 0;
 
  int? isPuccaOrKutcha;
+
+ double? landAreaAffected;
+double? cropSownArea;
+double? landHoldingArea;
+
 
   /// Selected Norm Codes
   List<int> get selectedNormCodes {

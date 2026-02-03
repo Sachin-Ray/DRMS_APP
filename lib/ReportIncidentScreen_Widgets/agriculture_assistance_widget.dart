@@ -55,6 +55,26 @@ class _AgricultureAssistanceWidgetState
   double calculatedAmount = 0;
 
   // =====================================================
+  // ✅ STORE SELECTED NORMS HERE
+  List<int> selectedAgricultureNorms = [];
+
+  // =====================================================
+  // ✅ UPDATE + PRINT SELECTED NORMS
+  void updateSelectedNorm(int normCode) {
+    selectedAgricultureNorms.clear();
+    selectedAgricultureNorms.add(normCode);
+
+    // ✅ Store in main model list also
+    widget.model.normCodes.clear();
+    widget.model.normCodes.addAll(selectedAgricultureNorms);
+
+    debugPrint("=====================================");
+    debugPrint("🌾 Selected Agriculture Norm Codes:");
+    debugPrint(selectedAgricultureNorms.toString());
+    debugPrint("=====================================");
+  }
+
+  // =====================================================
   // ✅ Dynamic Field Label
   String get dynamicFieldLabel {
     if (selectedCropCategory ==
@@ -157,6 +177,7 @@ class _AgricultureAssistanceWidgetState
           ],
           decoration: _input("Enter landholding area"),
           onChanged: (v) {
+            widget.model.landHoldingArea = double.tryParse(v) ?? 0;
             setState(() {
               if (selectedType == "SUBTYPE1" && landValue > 2) {
                 selectedType = null;
@@ -276,8 +297,19 @@ class _AgricultureAssistanceWidgetState
                     if (v == null) return;
                     setState(() {
                       selectedLandNorm = v;
+
                       landNormAmount =
                           double.tryParse(v["value"].toString()) ?? 0;
+
+                      // ✅ Extract Norm Code
+                      final normCode = v["normCode"];
+
+                      // ✅ Store norm in model
+                      widget.model.normCode = normCode;
+
+                      // ✅ Print selected norms
+                      updateSelectedNorm(normCode);
+
                       calculateLandLossAmount();
                     });
                   },
@@ -294,7 +326,7 @@ class _AgricultureAssistanceWidgetState
             onChanged: (v) {
               double affected = double.tryParse(v) ?? 0;
               double holding = double.tryParse(landController.text) ?? 0;
-
+              widget.model.landAreaAffected = double.tryParse(v) ?? 0;
               setState(() {
                 landAreaError = affected > holding;
                 if (!landAreaError) calculateLandLossAmount();
@@ -384,6 +416,9 @@ class _AgricultureAssistanceWidgetState
                         selectedNormCode = val;
                         widget.model.normCode = val;
 
+                        // ✅ Print selected norms
+                        updateSelectedNorm(val!);
+
                         inputAmount =
                             double.tryParse(norm["value"].toString()) ?? 0;
 
@@ -406,7 +441,7 @@ class _AgricultureAssistanceWidgetState
             onChanged: (v) {
               double crop = double.tryParse(v) ?? 0;
               double holding = double.tryParse(landController.text) ?? 0;
-
+              widget.model.cropSownArea = double.tryParse(v) ?? 0;
               setState(() {
                 cropAreaError = crop > holding;
                 if (!cropAreaError) calculateInputAmount();

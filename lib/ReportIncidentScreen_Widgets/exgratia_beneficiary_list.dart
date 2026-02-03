@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:drms/ReportIncidentScreen_Widgets/pdf_viewer_page.dart';
 import 'package:drms/model/ExGratiaBeneficiary.dart';
+import 'package:drms/services/APIService.dart';
 import 'package:flutter/material.dart';
 
 import 'package:dio/dio.dart';
@@ -14,18 +15,27 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
   final Function(ExGratiaBeneficiary) onDelete;
   final IconData icon;
 
+  // ✅ Needed for SOP API
+  final String firNo;
+  final String assistanceHead;
+
+  final Future<void> Function() onRefreshBeneficiaries;
+
   const ExGratiaBeneficiaryList({
     super.key,
     required this.list,
     required this.onEdit,
     required this.onDelete,
     required this.icon,
+
+    // ✅ Add these
+    required this.firNo,
+    required this.assistanceHead,
+    required this.onRefreshBeneficiaries,
   });
 
   static const String _docApiBase =
       "https://relief.megrevenuedm.gov.in/stagingapi/drms/v-1/app/api/fetchFile";
-
-  // static const String _docApiBase = "http://10.179.2.219:8083/drms/v-1/app/api/fetchFile";
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +48,44 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
       );
     }
 
-    return isMobile ? _mobileView(context) : _tableView(context);
+    return Column(
+      children: [
+        // ✅ Existing List View
+        isMobile ? _mobileView(context) : _tableView(context),
+
+        const SizedBox(height: 25),
+
+        // ============================================================
+        // ✅ Draft Proposal Button (Image 1)
+        // ============================================================
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          icon: const Icon(Icons.description, color: Colors.white),
+          label: const Text(
+            "Draft Proposal",
+            style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+          ),
+
+          // ✅ UPDATED LOGIC HERE
+          onPressed: () {
+            if (!_allBeneficiariesHaveDocuments()) {
+              _showMissingDocMessage(context);
+              return;
+            }
+
+            _openDraftProposalModal(context);
+          },
+        ),
+
+        const SizedBox(height: 15),
+      ],
+    );
   }
 
   /* ========================================================= */
@@ -56,6 +103,28 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
           return _tableRow(context, index, b);
         }),
       ],
+    );
+  }
+
+  // ============================================================
+  // ✅ CHECK: All Beneficiaries Have Documents
+  // ============================================================
+  bool _allBeneficiariesHaveDocuments() {
+    return list.every((b) => b.documents.isNotEmpty);
+  }
+
+  // ============================================================
+  // ✅ SHOW WARNING MESSAGE
+  // ============================================================
+  void _showMissingDocMessage(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red.shade700,
+        content: const Text(
+          "❌ Please upload documents for all beneficiaries before drafting proposal.",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
     );
   }
 
@@ -90,9 +159,7 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
           _cell(b.assistance, 4),
           _cell("₹${b.amount}", 2),
 
-          /// ✅ Pass Beneficiary Name Confirmed
           _documentsCell(context, b),
-
           _actionCell(b),
         ],
       ),
@@ -129,6 +196,9 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ===================================================
+                // HEADER ROW (Name + Amount Badge)
+                // ===================================================
                 Row(
                   children: [
                     Stack(
@@ -161,12 +231,33 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(width: 12),
+
                     Expanded(
                       child: Text(
                         b.beneficiaryName,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+
+                    // ✅ Amount Badge FIXED
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Text(
+                        "₹${b.amount}",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                          fontSize: 14,
                         ),
                       ),
                     ),
@@ -191,7 +282,7 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
 
                 const SizedBox(height: 14),
 
-                /// Documents List
+                // Enclosures Section
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
@@ -261,6 +352,386 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
   }
 
   /* ========================================================= */
+  /* ===================== DRAFT PROPOSAL ==================== */
+  /* ========================================================= */
+
+  void _openDraftProposalModal(BuildContext context) {
+    // ✅ Unique Village Count
+    final uniqueVillages = list.map((e) => e.village).toSet().length;
+
+    // ✅ Household Count
+    final households = list.length;
+
+    final TextEditingController familyCtrl = TextEditingController();
+    final TextEditingController remarksCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ✅ Header
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.green.shade100,
+                      child: const Icon(
+                        Icons.description,
+                        color: Colors.green,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        "Draft Proposal",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+
+                // ✅ Readonly Fields Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _modernReadonlyField(
+                        label: "Villages",
+                        value: uniqueVillages.toString(),
+                        icon: Icons.location_city,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _modernReadonlyField(
+                        label: "Households",
+                        value: households.toString(),
+                        icon: Icons.house,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+
+                // ✅ Family Count Input
+                _modernInputField(
+                  controller: familyCtrl,
+                  label: "Family Members Affected",
+                  icon: Icons.groups,
+                  keyboardType: TextInputType.number,
+                ),
+
+                const SizedBox(height: 14),
+
+                // ✅ Remarks Input
+                _modernInputField(
+                  controller: remarksCtrl,
+                  label: "Remarks before forwarding",
+                  icon: Icons.edit_note,
+                  keyboardType: TextInputType.text,
+                ),
+
+                const SizedBox(height: 22),
+
+                // ✅ Buttons Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          side: BorderSide(color: Colors.grey.shade400),
+                        ),
+                        child: const Text(
+                          "Cancel",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          "Freeze & Close",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        onPressed: () {
+  // ✅ Validation: Family Count Mandatory
+  if (familyCtrl.text.trim().isEmpty ||
+      int.tryParse(familyCtrl.text.trim()) == null ||
+      int.parse(familyCtrl.text.trim()) <= 0) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red.shade700,
+        content: const Text(
+          "❌ Please enter valid family members affected.",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+    return;
+  }
+
+  // ✅ Validation: Remarks Mandatory
+  if (remarksCtrl.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red.shade700,
+        content: const Text(
+          "❌ Remarks are mandatory before forwarding.",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+    return;
+  }
+
+  // ✅ If Valid → Proceed
+  Navigator.pop(context);
+
+  _confirmFreezeDialog(
+    context,
+    uniqueVillages,
+    households,
+    familyCtrl.text.trim(),
+    remarksCtrl.text.trim(),
+  );
+},
+
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _modernReadonlyField({
+    required String label,
+    required String value,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Colors.blue.shade700),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _modernInputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required TextInputType keyboardType,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: Colors.green),
+        labelText: label,
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Colors.green, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  /* ========================================================= */
+  /* ================= CONFIRMATION POPUP ==================== */
+  /* ========================================================= */
+
+  void _confirmFreezeDialog(
+    BuildContext context,
+    int villages,
+    int households,
+    String familyCount,
+    String remarks,
+  ) {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Text("Confirmation"),
+          content: const Text(
+            "Are you sure you want to freeze and close?\n\n"
+            "This action is final and cannot be undone.",
+          ),
+          actions: [
+            TextButton(
+              child: const Text("NO"),
+              onPressed: () => Navigator.pop(context),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              child: const Text("YES"),
+              onPressed: () async {
+                Navigator.pop(context);
+
+                final success = await _submitGenerateSOP(
+                  remarks: remarks,
+                  villages: villages,
+                  households: households,
+                  familyAffected: int.tryParse(familyCount) ?? 0,
+                );
+
+                debugPrint("📌 SOP Generation Result: $success");
+
+                _showResultDialog(context, success);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /* ========================================================= */
+  /* =================== SOP API SUBMIT ====================== */
+  /* ========================================================= */
+
+  Future<bool> _submitGenerateSOP({
+    required String remarks,
+    required int villages,
+    required int households,
+    required int familyAffected,
+  }) async {
+    debugPrint("📤 Generating SOP...");
+
+    final result = await APIService.instance.generateSOPReport(
+      firNo: firNo,
+      remarks: remarks,
+      villages: villages,
+      households: households,
+      familyAffected: familyAffected,
+      assistanceHead: assistanceHead,
+    );
+
+    debugPrint("📌 SOP Result: $result");
+
+    if (result != null && result["status"] == "SUCCESS") {
+      debugPrint("✅ SOP Generated Successfully");
+
+      // ✅ Refresh Beneficiary List from Parent Screen
+      await onRefreshBeneficiaries();
+
+      return true;
+    }
+
+    debugPrint("❌ SOP Generation Failed");
+    return false;
+  }
+
+  /* ========================================================= */
+  /* ================= SUCCESS / ERROR POPUP ================= */
+  /* ========================================================= */
+
+  void _showResultDialog(BuildContext context, bool success) {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: Text(success ? "Success" : "Error"),
+          content: Text(
+            success
+                ? "✅ Proposal Drafted Successfully!"
+                : "❌ Failed to Draft Proposal. Please try again.",
+          ),
+          actions: [
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /* ========================================================= */
   /* ====================== BASE64 FETCH ====================== */
   /* ========================================================= */
 
@@ -281,10 +752,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 
-  /* ========================================================= */
-  /* ✅ FIX 1: EXTENSION BASED ON MIME TYPE                     */
-  /* ========================================================= */
-
   String _getExtension(String mimeType) {
     if (mimeType.contains("pdf")) return ".pdf";
     if (mimeType.contains("jpeg")) return ".jpg";
@@ -293,10 +760,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     if (mimeType.contains("officedocument")) return ".docx";
     return "";
   }
-
-  /* ========================================================= */
-  /* ===================== OPTIONS SHEET ====================== */
-  /* ========================================================= */
 
   void _showDocOptions(BuildContext context, doc, String beneficiaryName) {
     showModalBottomSheet(
@@ -318,8 +781,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 15),
-
-              /// Preview
               ListTile(
                 leading: const Icon(Icons.visibility, color: Colors.blue),
                 title: const Text("Preview in App"),
@@ -328,8 +789,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                   await _previewBase64(context, doc.documentCode);
                 },
               ),
-
-              /// ✅ Download Only (No Open)
               ListTile(
                 leading: const Icon(Icons.download, color: Colors.orange),
                 title: const Text("Download File"),
@@ -348,10 +807,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
       },
     );
   }
-
-  /* ========================================================= */
-  /* ===================== PREVIEW FILE ======================= */
-  /* ========================================================= */
 
   Future<void> _previewBase64(BuildContext context, String docCode) async {
     showDialog(
@@ -399,10 +854,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     }
   }
 
-  /* ========================================================= */
-  /* ✅ FIX 2: DOWNLOAD ORGANIZED + EXTENSION CORRECT           */
-  /* ========================================================= */
-
   Future<void> _downloadBase64(
     BuildContext context,
     String docCode,
@@ -425,20 +876,16 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
 
       Uint8List bytes = _decodeBase64(base64Data);
 
-      /// Extension Fix
       final ext = _getExtension(mimeType);
 
-      /// Safe Filename
       String safeName = filename.replaceAll(" ", "_").replaceAll("/", "_");
 
       if (!safeName.endsWith(ext)) {
         safeName += ext;
       }
 
-      /// Safe Folder Name
       String folder = beneficiaryName.replaceAll(" ", "_").toUpperCase();
 
-      /// Organized Directory
       final directory = Directory(
         "/storage/emulated/0/Download/DRMS_Beneficiaries/$folder",
       );
@@ -466,10 +913,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
       ).showSnackBar(SnackBar(content: Text("❌ Download failed: $e")));
     }
   }
-
-  /* ========================================================= */
-  /* ===================== DOCUMENT ICONS ===================== */
-  /* ========================================================= */
 
   Widget _cell(String text, int flex) =>
       Expanded(flex: flex, child: Text(text));
@@ -499,8 +942,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
             ),
     );
   }
-
-  /* ========================================================= */
 
   Widget _actionCell(ExGratiaBeneficiary b) {
     return Expanded(
