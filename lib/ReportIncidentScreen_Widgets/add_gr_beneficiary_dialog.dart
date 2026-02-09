@@ -64,9 +64,6 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     super.dispose();
   }
 
-  // ==========================================================
-  // CONFIRMATION DIALOG
-  // ==========================================================
   Future<bool?> _showConfirmDialog() {
     return showDialog<bool>(
       context: context,
@@ -108,9 +105,6 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     );
   }
 
-  // ==========================================================
-  // SUBMIT BENEFICIARY
-  // ==========================================================
   Future<void> _submitBeneficiary() async {
     if (!_formKey.currentState!.validate()) {
       setState(() => b1 = true);
@@ -159,7 +153,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
         b5 = true;
       });
 
-      // ✅ Scroll to upload section
+      // Scroll to upload section
       await Future.delayed(const Duration(milliseconds: 300));
 
       _scrollController.animateTo(
@@ -172,9 +166,6 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     }
   }
 
-  // ==========================================================
-  // PICK FILE
-  // ==========================================================
   Future<void> _pickFile(int documentCode) async {
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -188,16 +179,10 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
     }
   }
 
-  // ==========================================================
-  // CHECK IF ALL REQUIRED DOCS UPLOADED
-  // ==========================================================
   bool get allDocsUploaded {
     return requiredDocs.every((doc) => uploadedDocs[doc.documentCode] != null);
   }
 
-  // ==========================================================
-  // UPLOAD ENCLOSURES
-  // ==========================================================
   Future<void> _uploadEnclosures() async {
     if (!allDocsUploaded) {
       _showErrorDialog(
@@ -255,7 +240,6 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ================= HEADER =================
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: const BoxDecoration(
@@ -282,7 +266,6 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                 ),
               ),
 
-              // ================= BODY =================
               Flexible(
                 child: SingleChildScrollView(
                   controller: _scrollController,
@@ -322,7 +305,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                           ),
                         ),
 
-                      // ✅ FORM SECTION
+                      // FORM SECTION
                       AbsorbPointer(
                         absorbing: freezeForm,
                         child: Column(
@@ -367,7 +350,6 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                         ),
                       ),
 
-                      // ================= UPLOAD ENCLOSURES =================
                       if (showRequiredDocs)
                         AccordionSection(
                           title: "Upload Enclosures (Mandatory)",
@@ -443,7 +425,6 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                 ),
               ),
 
-              // ================= FOOTER =================
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(

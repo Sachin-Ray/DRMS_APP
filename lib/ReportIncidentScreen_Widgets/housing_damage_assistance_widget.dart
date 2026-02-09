@@ -17,46 +17,25 @@ class HousingDamageAssistanceWidget extends StatefulWidget {
 
 class _HousingDamageAssistanceWidgetState
     extends State<HousingDamageAssistanceWidget> {
-  // ======================================================
-  // MAIN CHECKBOX SELECTION
-  // ======================================================
   bool houseDamageSelected = false;
   bool cattleShedSelected = false;
 
-  // ======================================================
-  // HOUSE DAMAGE TYPE RADIO
-  // ======================================================
   String? selectedHouseType;
 
-  // ======================================================
-  // HOUSE SUBTYPE LIST FROM API
-  // ======================================================
   bool loadingSubtypes = false;
   List<Map<String, dynamic>> houseSubtypes = [];
 
   int? selectedNormCode;
 
-  // ======================================================
-  // ✅ Additional Info (Pucca/Kutcha) NormCode
-  // ======================================================
   int? additionalInfoNormCode;
 
-  // ======================================================
-  // HOUSING NORM AMOUNT
-  // ======================================================
   bool loadingNorm = false;
   double normValue = 0;
 
-  // ======================================================
-  // CATTLE SHED AMOUNT
-  // ======================================================
   bool loadingCattleNorm = false;
   double cattleNormValue = 0;
   int? cattleNormCode;
 
-  // ======================================================
-  // FETCH HOUSE SUBTYPES
-  // ======================================================
   Future<void> fetchHouseSubtypes(String houseType) async {
     setState(() {
       loadingSubtypes = true;
@@ -80,16 +59,13 @@ class _HousingDamageAssistanceWidgetState
       loadingSubtypes = false;
     });
 
-    // ✅ Hut Auto Select
+    // Hut Auto Select
     if (houseType == "Hut" && houseSubtypes.isNotEmpty) {
       final autoNorm = houseSubtypes.first["norm_code"];
       selectSubtype(autoNorm);
     }
   }
 
-  // ======================================================
-  // FETCH NORM DETAILS
-  // ======================================================
   Future<void> selectSubtype(int normCode) async {
     setState(() {
       selectedNormCode = normCode;
@@ -107,9 +83,6 @@ class _HousingDamageAssistanceWidgetState
     updateTotalAmount();
   }
 
-  // ======================================================
-  // FETCH CATTLE SHED NORM
-  // ======================================================
   Future<void> fetchCattleShedNorm() async {
   setState(() {
     loadingCattleNorm = true;
@@ -125,7 +98,7 @@ class _HousingDamageAssistanceWidgetState
     return;
   }
 
-  // ✅ Ensure state updates
+  // Ensure state updates
   setState(() {
     cattleNormCode = normCode;
   });
@@ -142,29 +115,17 @@ class _HousingDamageAssistanceWidgetState
 }
 
 
-  // ======================================================
-  // ✅ UPDATE TOTAL + STORE CORRECT VALUES
-  // ======================================================
   void updateTotalAmount() {
   double total = 0;
 
-  // ============================
-  // Calculate Total Amount
-  // ============================
   if (selectedNormCode != null) total += normValue;
   if (cattleShedSelected) total += cattleNormValue;
 
   widget.model.amountNotifier.value = total;
 
-  // ============================
-  // Reset Stored Values
-  // ============================
   widget.model.normCodes.clear();
   widget.model.isPuccaOrKutcha = null;
 
-  // ============================
-  // ✅ Store House Damage Norm Codes
-  // ============================
 
   // CASE 1: Fully Damaged
   if (selectedHouseType == "Fully Damaged/Severely Damaged") {
@@ -194,28 +155,12 @@ class _HousingDamageAssistanceWidgetState
     widget.model.isPuccaOrKutcha = null;
   }
 
-  // ============================
-  // ✅ FIX: Store Cattle Shed Norm Code
-  // ============================
   if (cattleShedSelected && cattleNormCode != null) {
     widget.model.normCodes.add(cattleNormCode!);
   }
 
-  // ============================
-  // DEBUG PRINT
-  // ============================
-  debugPrint("====================================");
-  debugPrint("🏠 House Type = $selectedHouseType");
-  debugPrint("🏠 House NormCodes = ${widget.model.normCodes}");
-  debugPrint("🐄 Cattle NormCode = $cattleNormCode");
-  debugPrint("🏠 IspuccaOrKutcha = ${widget.model.isPuccaOrKutcha}");
-  debugPrint("💰 TOTAL HOUSING AMOUNT = ₹$total");
-  debugPrint("====================================");
 }
 
-  // ======================================================
-  // UI BUILD
-  // ======================================================
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -279,9 +224,6 @@ class _HousingDamageAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // HOUSE DAMAGE SECTION
-  // ======================================================
   Widget _buildHouseDamageSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,7 +247,7 @@ class _HousingDamageAssistanceWidgetState
 
         if (selectedHouseType != null) _buildSubtypeSection(),
 
-        // ✅ Show Additional Info ONLY for Fully Damaged
+        // Show Additional Info ONLY for Fully Damaged
         if (selectedHouseType == "Fully Damaged/Severely Damaged" &&
             selectedNormCode != null)
           _buildAdditionalInfoSection(),
@@ -313,9 +255,6 @@ class _HousingDamageAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // HOUSE SUBTYPE SECTION
-  // ======================================================
   Widget _buildSubtypeSection() {
     if (loadingSubtypes) {
       return const Center(child: CircularProgressIndicator());
@@ -350,9 +289,6 @@ class _HousingDamageAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // ✅ Additional Info Section (Pucca/Kutcha)
-  // ======================================================
   Widget _buildAdditionalInfoSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,9 +324,6 @@ class _HousingDamageAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // CATTLE SHED SECTION
-  // ======================================================
   Widget _buildCattleShedSection() {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
@@ -429,9 +362,6 @@ class _HousingDamageAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // RADIO OPTION BUILDER
-  // ======================================================
   Widget _radioOption(String value) {
     return RadioListTile<String>(
       value: value,
@@ -446,9 +376,6 @@ class _HousingDamageAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // REQUIRED LABEL
-  // ======================================================
   Widget _requiredLabel(String label) {
     return Row(
       children: [

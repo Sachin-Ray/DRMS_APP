@@ -17,7 +17,6 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
   bool boatSelected = false;
   bool netSelected = false;
 
-  // ✅ Dynamic Norm Codes
   int? repairBoatCode;
   int? replacementBoatCode;
 
@@ -38,9 +37,6 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
   Map<int, TextEditingController> netControllers = {};
   Map<int, double> netCalculatedAmounts = {};
 
-  // ======================================================
-  // FETCH NORMS
-  // ======================================================
   Future<void> fetchSubtypeNorms(String subtype) async {
     if (subtype == "SUBTYPE5") {
       setState(() {
@@ -67,9 +63,6 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
     });
   }
 
-  // ======================================================
-  // ✅ UPDATE TOTAL + STORE NORM CODES + COUNTS
-  // ======================================================
   void updateGrandTotal() {
     double total = 0;
 
@@ -85,67 +78,32 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
       ...selectedNetNormCodes,
     ]);
 
-    // ======================================================
-    // ✅ Store Boat Counts Dynamically
-    // ======================================================
     widget.model.noOfRepairBoat =
         int.tryParse(boatControllers[repairBoatCode]?.text ?? "0") ?? 0;
 
     widget.model.noOfReplacementBoat =
         int.tryParse(boatControllers[replacementBoatCode]?.text ?? "0") ?? 0;
 
-    // ======================================================
-    // ✅ Store Net Counts Dynamically
-    // ======================================================
     widget.model.noOfRepairNet =
         int.tryParse(netControllers[repairNetCode]?.text ?? "0") ?? 0;
 
     widget.model.noOfReplacementNet =
         int.tryParse(netControllers[replacementNetCode]?.text ?? "0") ?? 0;
 
-    // ======================================================
-    // DEBUG PRINT
-    // ======================================================
-    debugPrint("=====================================");
-    debugPrint("🎣 Fishery Norm Codes = ${widget.model.normCodes}");
-
-    debugPrint("🚤 Repair Boat Code = $repairBoatCode");
-    debugPrint("🚤 Replacement Boat Code = $replacementBoatCode");
-
-    debugPrint("🎣 Repair Net Code = $repairNetCode");
-    debugPrint("🎣 Replacement Net Code = $replacementNetCode");
-
-    debugPrint("🚤 Repair Boat Count = ${widget.model.noOfRepairBoat}");
-    debugPrint("🚤 Replace Boat Count = ${widget.model.noOfReplacementBoat}");
-
-    debugPrint("🎣 Repair Net Count = ${widget.model.noOfRepairNet}");
-    debugPrint("🎣 Replace Net Count = ${widget.model.noOfReplacementNet}");
-
-    debugPrint("✅ Total Fishery Amount = ₹$total");
-    debugPrint("=====================================");
   }
 
-  // ======================================================
-  // CALCULATE BOAT AMOUNT
-  // ======================================================
   void calculateBoat(int normCode, double value) {
     final count = double.tryParse(boatControllers[normCode]!.text) ?? 0;
     boatCalculatedAmounts[normCode] = count * value;
     updateGrandTotal();
   }
 
-  // ======================================================
-  // CALCULATE NET AMOUNT
-  // ======================================================
   void calculateNet(int normCode, double value) {
     final count = double.tryParse(netControllers[normCode]!.text) ?? 0;
     netCalculatedAmounts[normCode] = count * value;
     updateGrandTotal();
   }
 
-  // ======================================================
-  // UI BUILD
-  // ======================================================
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -154,7 +112,6 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
         _requiredLabel("Assistance Type"),
         const SizedBox(height: 12),
 
-        // 🚤 Boat Checkbox
         CheckboxListTile(
           value: boatSelected,
           title: const Text(
@@ -178,7 +135,6 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
           },
         ),
 
-        // 🎣 Net Checkbox
         CheckboxListTile(
           value: netSelected,
           title: const Text(
@@ -208,9 +164,6 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
     );
   }
 
-  // ======================================================
-  // 🚤 BOAT SECTION
-  // ======================================================
   Widget _buildBoatSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +183,7 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
 
               final option = norm["option"].toString().toLowerCase();
 
-              // ✅ Detect Repair/Replacement Boat Codes
+              // Detect Repair/Replacement Boat Codes
               if (option.contains("repair")) {
                 repairBoatCode = normCode;
               }
@@ -276,9 +229,6 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
     );
   }
 
-  // ======================================================
-  // 🎣 NET SECTION
-  // ======================================================
   Widget _buildNetSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,9 +294,6 @@ class _FisheryAssistanceWidgetState extends State<FisheryAssistanceWidget> {
     );
   }
 
-  // ======================================================
-  // HELPERS
-  // ======================================================
   Widget _requiredLabel(String label) {
     return Row(
       children: [

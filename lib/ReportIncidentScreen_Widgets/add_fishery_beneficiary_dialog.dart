@@ -67,9 +67,6 @@ class _AddFisheryBeneficiaryDialogState
     super.dispose();
   }
 
-  // ==========================================================
-  // CONFIRMATION DIALOG
-  // ==========================================================
   Future<bool?> _showConfirmDialog() {
     return showDialog<bool>(
       context: context,
@@ -111,9 +108,6 @@ class _AddFisheryBeneficiaryDialogState
     );
   }
 
-  // ==========================================================
-  // SUBMIT FISHERY BENEFICIARY
-  // ==========================================================
   Future<void> _submitFisheryBeneficiary() async {
     if (!_formKey.currentState!.validate()) {
       setState(() => b1 = true);
@@ -135,9 +129,6 @@ class _AddFisheryBeneficiaryDialogState
 
     setState(() => isSubmitting = true);
 
-    // ======================================================
-    // ✅ Count Values for Payload
-    // ======================================================
     int repairBoat = assistance.noOfRepairBoat;
     int replaceBoat = assistance.noOfReplacementBoat;
     int repairNet = assistance.noOfRepairNet;
@@ -156,13 +147,13 @@ class _AddFisheryBeneficiaryDialogState
       "remarks": assistance.remarks,
       "firNo": widget.firNo,
 
-      /// ✅ Fishery Assistance Head
+      /// Fishery Assistance Head
       "assistanceHead": "AH-FS",
 
-      /// ✅ Multi Norm Select
+      /// Multi Norm Select
       "normSelect": assistance.normCodes,
 
-      /// ✅ Extra Fishery Counts
+      /// Extra Fishery Counts
       "noOfRepairBoat": repairBoat,
       "noOfReplacementBoat": replaceBoat,
       "noOfRepairNet": repairNet,
@@ -177,7 +168,7 @@ class _AddFisheryBeneficiaryDialogState
     if (result != null && result["status"] == "SUCCESS") {
       generatedBeneficiaryId = result["data"]["body"].toString().trim();
 
-      /// ✅ Fetch Required Docs for Multi Norms
+      /// Fetch Required Docs for Multi Norms
       requiredDocs = await APIService.instance.fetchDocumentsMulti(
         assistance.normCodes,
         widget.firNo,
@@ -190,7 +181,7 @@ class _AddFisheryBeneficiaryDialogState
         b5 = true;
       });
 
-      // ✅ Scroll to upload section
+      // Scroll to upload section
       await Future.delayed(const Duration(milliseconds: 300));
 
       _scrollController.animateTo(
@@ -203,9 +194,6 @@ class _AddFisheryBeneficiaryDialogState
     }
   }
 
-  // ==========================================================
-  // PICK FILE
-  // ==========================================================
   Future<void> _pickFile(int documentCode) async {
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -223,9 +211,6 @@ class _AddFisheryBeneficiaryDialogState
     return requiredDocs.every((doc) => uploadedDocs[doc.documentCode] != null);
   }
 
-  // ==========================================================
-  // UPLOAD ENCLOSURES
-  // ==========================================================
   Future<void> _uploadEnclosures() async {
     if (!allDocsUploaded) {
       _showErrorDialog("All enclosures are mandatory. Please upload all files.");
@@ -268,10 +253,6 @@ class _AddFisheryBeneficiaryDialogState
       _showErrorDialog("Upload failed. Please try again.");
     }
   }
-
-  // ==========================================================
-  // UI BUILD
-  // ==========================================================
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -284,7 +265,6 @@ class _AddFisheryBeneficiaryDialogState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ================= HEADER =================
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: const BoxDecoration(
@@ -311,7 +291,6 @@ class _AddFisheryBeneficiaryDialogState
                 ),
               ),
 
-              // ================= BODY =================
               Flexible(
                 child: SingleChildScrollView(
                   controller: _scrollController,
@@ -380,7 +359,6 @@ class _AddFisheryBeneficiaryDialogState
                         ),
                       ),
 
-                      // ================= UPLOAD ENCLOSURES =================
                       if (showRequiredDocs)
                         AccordionSection(
                           title: "Upload Enclosures (Mandatory)",
@@ -440,7 +418,6 @@ class _AddFisheryBeneficiaryDialogState
                 ),
               ),
 
-              // ================= FOOTER =================
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: SizedBox(

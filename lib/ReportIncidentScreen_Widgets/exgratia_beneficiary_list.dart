@@ -15,7 +15,7 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
   final Function(ExGratiaBeneficiary) onDelete;
   final IconData icon;
 
-  // ✅ Needed for SOP API
+  // Needed for SOP API
   final String firNo;
   final String assistanceHead;
 
@@ -28,7 +28,7 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     required this.onDelete,
     required this.icon,
 
-    // ✅ Add these
+    // Add these
     required this.firNo,
     required this.assistanceHead,
     required this.onRefreshBeneficiaries,
@@ -50,13 +50,13 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
 
     return Column(
       children: [
-        // ✅ Existing List View
+        // Existing List View
         isMobile ? _mobileView(context) : _tableView(context),
 
         const SizedBox(height: 25),
 
         // ============================================================
-        // ✅ Draft Proposal Button (Image 1)
+        // Draft Proposal Button (Image 1)
         // ============================================================
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
@@ -72,7 +72,7 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
           ),
 
-          // ✅ UPDATED LOGIC HERE
+          // UPDATED LOGIC HERE
           onPressed: () {
             if (!_allBeneficiariesHaveDocuments()) {
               _showMissingDocMessage(context);
@@ -88,10 +88,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 
-  /* ========================================================= */
-  /* ======================= TABLE VIEW ====================== */
-  /* ========================================================= */
-
   Widget _tableView(BuildContext context) {
     return Column(
       children: [
@@ -106,16 +102,10 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // ✅ CHECK: All Beneficiaries Have Documents
-  // ============================================================
   bool _allBeneficiariesHaveDocuments() {
     return list.every((b) => b.documents.isNotEmpty);
   }
 
-  // ============================================================
-  // ✅ SHOW WARNING MESSAGE
-  // ============================================================
   void _showMissingDocMessage(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -166,10 +156,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 
-  /* ========================================================= */
-  /* ======================= MOBILE VIEW ===================== */
-  /* ========================================================= */
-
   Widget _mobileView(BuildContext context) {
     return ListView.builder(
       shrinkWrap: true,
@@ -196,9 +182,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ===================================================
-                // HEADER ROW (Name + Amount Badge)
-                // ===================================================
                 Row(
                   children: [
                     Stack(
@@ -242,7 +225,7 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                       ),
                     ),
 
-                    // ✅ Amount Badge FIXED
+                    // Amount Badge FIXED
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 14,
@@ -351,10 +334,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 
-  /* ========================================================= */
-  /* ===================== DRAFT PROPOSAL ==================== */
-  /* ========================================================= */
-
   void _openDraftProposalModal(BuildContext context) {
     // ✅ Unique Village Count
     final uniqueVillages = list.map((e) => e.village).toSet().length;
@@ -383,7 +362,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ✅ Header
                 Row(
                   children: [
                     CircleAvatar(
@@ -413,8 +391,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 18),
-
-                // ✅ Readonly Fields Row
                 Row(
                   children: [
                     Expanded(
@@ -437,7 +413,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
 
                 const SizedBox(height: 18),
 
-                // ✅ Family Count Input
                 _modernInputField(
                   controller: familyCtrl,
                   label: "Family Members Affected",
@@ -447,7 +422,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
 
                 const SizedBox(height: 14),
 
-                // ✅ Remarks Input
                 _modernInputField(
                   controller: remarksCtrl,
                   label: "Remarks before forwarding",
@@ -457,7 +431,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
 
                 const SizedBox(height: 22),
 
-                // ✅ Buttons Row
                 Row(
                   children: [
                     Expanded(
@@ -494,7 +467,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
                           ),
                         ),
                         onPressed: () {
-  // ✅ Validation: Family Count Mandatory
   if (familyCtrl.text.trim().isEmpty ||
       int.tryParse(familyCtrl.text.trim()) == null ||
       int.parse(familyCtrl.text.trim()) <= 0) {
@@ -510,7 +482,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     return;
   }
 
-  // ✅ Validation: Remarks Mandatory
   if (remarksCtrl.text.trim().isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -524,7 +495,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     return;
   }
 
-  // ✅ If Valid → Proceed
   Navigator.pop(context);
 
   _confirmFreezeDialog(
@@ -620,9 +590,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 
-  /* ========================================================= */
-  /* ================= CONFIRMATION POPUP ==================== */
-  /* ========================================================= */
 
   void _confirmFreezeDialog(
     BuildContext context,
@@ -669,9 +636,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     );
   }
 
-  /* ========================================================= */
-  /* =================== SOP API SUBMIT ====================== */
-  /* ========================================================= */
 
   Future<bool> _submitGenerateSOP({
     required String remarks,
@@ -695,7 +659,7 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     if (result != null && result["status"] == "SUCCESS") {
       debugPrint("✅ SOP Generated Successfully");
 
-      // ✅ Refresh Beneficiary List from Parent Screen
+      // Refresh Beneficiary List from Parent Screen
       await onRefreshBeneficiaries();
 
       return true;
@@ -705,9 +669,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
     return false;
   }
 
-  /* ========================================================= */
-  /* ================= SUCCESS / ERROR POPUP ================= */
-  /* ========================================================= */
 
   void _showResultDialog(BuildContext context, bool success) {
     showDialog(
@@ -730,10 +691,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
       },
     );
   }
-
-  /* ========================================================= */
-  /* ====================== BASE64 FETCH ====================== */
-  /* ========================================================= */
 
   Future<Map<String, dynamic>> _fetchBase64Doc(String docCode) async {
     final url = "$_docApiBase?doc=$docCode";
@@ -1009,7 +966,6 @@ class ExGratiaBeneficiaryList extends StatelessWidget {
   }
 }
 
-/* ========================================================= */
 
 class _HCell extends StatelessWidget {
   final String text;

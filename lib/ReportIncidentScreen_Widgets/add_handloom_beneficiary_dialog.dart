@@ -68,9 +68,6 @@ class _AddHandloomBeneficiaryDialogState
     super.dispose();
   }
 
-  // ==========================================================
-  // CONFIRMATION DIALOG
-  // ==========================================================
   Future<bool?> _showConfirmDialog() {
     return showDialog<bool>(
       context: context,
@@ -112,9 +109,6 @@ class _AddHandloomBeneficiaryDialogState
     );
   }
 
-  // ==========================================================
-  // SUBMIT HANDLOOM BENEFICIARY
-  // ==========================================================
   Future<void> _submitHandloomBeneficiary() async {
     if (!_formKey.currentState!.validate()) {
       setState(() => b1 = true);
@@ -149,10 +143,10 @@ class _AddHandloomBeneficiaryDialogState
       "remarks": assistance.remarks,
       "firNo": widget.firNo,
 
-      /// ✅ Handloom Assistance Head
+      /// Handloom Assistance Head
       "assistanceHead": "AH-HD",
 
-      /// ✅ Multi Norm Select
+      /// Multi Norm Select
       "normSelect": assistance.normCodes,
     };
 
@@ -163,7 +157,7 @@ class _AddHandloomBeneficiaryDialogState
     if (result != null && result["status"] == "SUCCESS") {
       generatedBeneficiaryId = result["data"]["body"].toString().trim();
 
-      /// ✅ Fetch Required Docs for Multi Norms
+      /// Fetch Required Docs for Multi Norms
       requiredDocs = await APIService.instance.fetchDocumentsMulti(
         assistance.normCodes,
         widget.firNo,
@@ -189,9 +183,6 @@ class _AddHandloomBeneficiaryDialogState
     }
   }
 
-  // ==========================================================
-  // PICK FILE
-  // ==========================================================
   Future<void> _pickFile(int documentCode) async {
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -209,9 +200,6 @@ class _AddHandloomBeneficiaryDialogState
     return requiredDocs.every((doc) => uploadedDocs[doc.documentCode] != null);
   }
 
-  // ==========================================================
-  // UPLOAD ENCLOSURES
-  // ==========================================================
   Future<void> _uploadEnclosures() async {
     if (!allDocsUploaded) {
       _showErrorDialog("All enclosures are mandatory. Please upload all files.");
@@ -255,9 +243,6 @@ class _AddHandloomBeneficiaryDialogState
     }
   }
 
-  // ==========================================================
-  // UI BUILD
-  // ==========================================================
   @override
   Widget build(BuildContext context) {
     return Dialog(

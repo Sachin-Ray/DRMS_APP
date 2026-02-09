@@ -18,20 +18,11 @@ class AnimalHusbandryAssistanceWidget extends StatefulWidget {
 
 class _AnimalHusbandryAssistanceWidgetState
     extends State<AnimalHusbandryAssistanceWidget> {
-  // ======================================================
-  // MAIN CHECKBOX SELECTION
-  // ======================================================
   bool milchOrDraughtSelected = false;
   bool poultrySelected = false;
 
-  // ======================================================
-  // RADIO BUTTON SELECTION
-  // ======================================================
   String? selectedAnimalType;
 
-  // ======================================================
-  // SUBTYPE LIST FROM API
-  // ======================================================
   bool loadingSubtypes = false;
   List<Map<String, dynamic>> animalSubtypes = [];
 
@@ -40,19 +31,12 @@ class _AnimalHusbandryAssistanceWidgetState
 
   // Store all selected norms finally
   List<int> allSelectedAnimalNorms = [];
-
-  // ======================================================
-  // DETAIL DATA FOR EACH NORM
-  // ======================================================
   Map<int, Map<String, dynamic>> normDetails = {};
 
   // Controllers + Calculations
   Map<int, TextEditingController> controllers = {};
   Map<int, double> calculatedAmounts = {};
 
-  // ======================================================
-  // POULTRY DATA
-  // ======================================================
   bool loadingPoultry = false;
   int? poultryNormCode;
   double poultryValue = 0;
@@ -60,9 +44,6 @@ class _AnimalHusbandryAssistanceWidgetState
   TextEditingController poultryController = TextEditingController();
   double poultryCalculated = 0;
 
-  // ======================================================
-  // FETCH SUBTYPES BASED ON RADIO
-  // ======================================================
   Future<void> fetchAnimalSubtypes(String animalType) async {
     setState(() {
       loadingSubtypes = true;
@@ -86,9 +67,6 @@ class _AnimalHusbandryAssistanceWidgetState
     updateModel();
   }
 
-  // ======================================================
-  // FETCH NORM DETAIL
-  // ======================================================
   Future<void> fetchNormDetail(int normCode) async {
     final detail = await APIService.instance.getNormByNormCode(normCode);
 
@@ -107,9 +85,6 @@ class _AnimalHusbandryAssistanceWidgetState
     updateGrandTotal();
   }
 
-  // ======================================================
-  // FETCH POULTRY NORM
-  // ======================================================
   Future<void> fetchPoultryNorm() async {
     setState(() {
       loadingPoultry = true;
@@ -141,9 +116,6 @@ class _AnimalHusbandryAssistanceWidgetState
     updateModel();
   }
 
-  // ======================================================
-  // CALCULATE AMOUNT FOR EACH SUBTYPE
-  // ======================================================
   void calculateAmount(int normCode) {
     final count = double.tryParse(controllers[normCode]!.text) ?? 0;
     final value = normDetails[normCode]?["value"] ?? 0;
@@ -153,18 +125,12 @@ class _AnimalHusbandryAssistanceWidgetState
     updateGrandTotal();
   }
 
-  // ======================================================
-  // CALCULATE POULTRY
-  // ======================================================
   void calculatePoultry() {
     final count = double.tryParse(poultryController.text) ?? 0;
     poultryCalculated = count * poultryValue;
     updateGrandTotal();
   }
 
-  // ======================================================
-  // UPDATE GRAND TOTAL + STORE SELECTED NORMS
-  // ======================================================
   void updateGrandTotal() {
   double total = 0;
 
@@ -176,9 +142,6 @@ class _AnimalHusbandryAssistanceWidgetState
 
   widget.model.amountNotifier.value = total;
 
-  // ======================================================
-  // ✅ Store ALL Norm Codes Properly
-  // ======================================================
   allSelectedAnimalNorms.clear();
 
   // Add Milch/Draught norms
@@ -193,9 +156,6 @@ class _AnimalHusbandryAssistanceWidgetState
   widget.model.normCodes.clear();
   widget.model.normCodes.addAll(allSelectedAnimalNorms);
 
-  // ======================================================
-  // ✅ NOW STORE COUNTS PROPERLY
-  // ======================================================
 
   int largeAnimalCount = 0;
   int smallAnimalCount = 0;
@@ -215,30 +175,16 @@ class _AnimalHusbandryAssistanceWidgetState
     }
   }
 
-  // ✅ Assign into model
+  // Assign into model
   widget.model.noOfLargeAnimal = largeAnimalCount;
   widget.model.noOfSmallAnimal = smallAnimalCount;
 
   // Poultry Count
   widget.model.noOfPoultry =
       int.tryParse(poultryController.text) ?? 0;
-
-  // ======================================================
-  // DEBUG PRINT
-  // ======================================================
-  debugPrint("=====================================");
-  debugPrint("🐄 Selected Norm Codes = $allSelectedAnimalNorms");
-  debugPrint("🐄 noOfLargeAnimal = ${widget.model.noOfLargeAnimal}");
-  debugPrint("🐑 noOfSmallAnimal = ${widget.model.noOfSmallAnimal}");
-  debugPrint("🐔 noOfPoultry     = ${widget.model.noOfPoultry}");
-  debugPrint("✅ TOTAL Amount = ₹$total");
-  debugPrint("=====================================");
 }
 
 
-  // ======================================================
-  // UPDATE MODEL VALUES (Subtype list only)
-  // ======================================================
   void updateModel() {
   widget.model.assistanceTypeList.clear();
 
@@ -250,9 +196,6 @@ class _AnimalHusbandryAssistanceWidgetState
     widget.model.assistanceTypeList.add("SUBTYPE4");
   }
 
-  // ======================================================
-  // ✅ STORE ANIMAL TYPE (Milch / Draught)
-  // ======================================================
   if (milchOrDraughtSelected) {
     widget.model.animalType = selectedAnimalType;
   } else {
@@ -263,9 +206,6 @@ class _AnimalHusbandryAssistanceWidgetState
 }
 
 
-  // ======================================================
-  // CLAIM LIMIT BASED ON TYPE
-  // ======================================================
   int getMaxLimit(int normCode) {
     if (selectedAnimalType == "Milch") {
       if (normCode == 25) return 3;
@@ -280,9 +220,6 @@ class _AnimalHusbandryAssistanceWidgetState
     return 0;
   }
 
-  // ======================================================
-  // UI BUILD
-  // ======================================================
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -351,9 +288,6 @@ class _AnimalHusbandryAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // MILCH / DRAUGHT SECTION
-  // ======================================================
   Widget _buildMilchDraughtSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -432,9 +366,6 @@ class _AnimalHusbandryAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // POULTRY SECTION
-  // ======================================================
   Widget _buildPoultrySection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -472,9 +403,6 @@ class _AnimalHusbandryAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // Norm Fields UI
-  // ======================================================
   Widget _buildNormFields(int normCode) {
     final value = normDetails[normCode]?["value"] ?? 0;
     final maxLimit = getMaxLimit(normCode);
@@ -500,9 +428,6 @@ class _AnimalHusbandryAssistanceWidgetState
     );
   }
 
-  // ======================================================
-  // HELPERS
-  // ======================================================
   Widget _requiredLabel(String label) {
     return Row(
       children: [

@@ -15,56 +15,43 @@ class AgricultureAssistanceWidget extends StatefulWidget {
 
 class _AgricultureAssistanceWidgetState
     extends State<AgricultureAssistanceWidget> {
-  // ================= Controllers =================
   final TextEditingController landController = TextEditingController();
   final TextEditingController affectedController = TextEditingController();
   final TextEditingController cropSownController = TextEditingController();
 
-  // ================= Main Selection =================
   String? selectedType;
   bool isLandEligible = true;
 
-  // ================= Farmer Type Logic =================
   String get farmerType {
     double land = double.tryParse(landController.text) ?? 0;
     return land <= 2 ? "TYPE1" : "TYPE2";
   }
 
-  // =====================================================
-  // ================= SUBTYPE1 (LANDLOSS) ===============
   bool loadingLandNorms = false;
   List<Map<String, dynamic>> landNorms = [];
   Map<String, dynamic>? selectedLandNorm;
   double landNormAmount = 0;
 
-  // =====================================================
-  // ================= SUBTYPE2 (INPUT SUBSIDY) ===========
   String? selectedCropCategory;
 
   bool loadingInputNorms = false;
   List<Map<String, dynamic>> inputNorms = [];
 
-  int? selectedNormCode; // ✅ normCode stored here
+  int? selectedNormCode;
   double inputAmount = 0;
 
-  // =====================================================
-  // ================= COMMON =============================
   bool landAreaError = false;
   bool cropAreaError = false;
 
   double calculatedAmount = 0;
 
-  // =====================================================
-  // ✅ STORE SELECTED NORMS HERE
   List<int> selectedAgricultureNorms = [];
 
-  // =====================================================
-  // ✅ UPDATE + PRINT SELECTED NORMS
   void updateSelectedNorm(int normCode) {
     selectedAgricultureNorms.clear();
     selectedAgricultureNorms.add(normCode);
 
-    // ✅ Store in main model list also
+    // Store in main model list also
     widget.model.normCodes.clear();
     widget.model.normCodes.addAll(selectedAgricultureNorms);
 
@@ -74,8 +61,7 @@ class _AgricultureAssistanceWidgetState
     debugPrint("=====================================");
   }
 
-  // =====================================================
-  // ✅ Dynamic Field Label
+  // Dynamic Field Label
   String get dynamicFieldLabel {
     if (selectedCropCategory ==
         "agriculture, horticulture and annual crop") {
@@ -90,8 +76,6 @@ class _AgricultureAssistanceWidgetState
     return "Types";
   }
 
-  // =====================================================
-  // ================= FETCH LAND NORMS ====================
   Future<void> fetchLandNorms() async {
     setState(() {
       loadingLandNorms = true;
@@ -113,8 +97,6 @@ class _AgricultureAssistanceWidgetState
     setState(() => loadingLandNorms = false);
   }
 
-  // =====================================================
-  // ================= FETCH INPUT SUBSIDY NORMS ===========
   Future<void> fetchInputSubsidyNorms(String losstype) async {
     setState(() {
       loadingInputNorms = true;
@@ -139,8 +121,6 @@ class _AgricultureAssistanceWidgetState
     });
   }
 
-  // =====================================================
-  // ================= CALCULATIONS =======================
   void calculateLandLossAmount() {
     double affected = double.tryParse(affectedController.text) ?? 0;
     calculatedAmount = landNormAmount * affected;
@@ -153,8 +133,6 @@ class _AgricultureAssistanceWidgetState
     widget.model.amountNotifier.value = calculatedAmount;
   }
 
-  // =====================================================
-  // ================= BUILD UI ===========================
   @override
   Widget build(BuildContext context) {
     double landValue = double.tryParse(landController.text) ?? 0;
@@ -163,9 +141,6 @@ class _AgricultureAssistanceWidgetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ==========================================================
-        // 1️⃣ Landholding
-        // ==========================================================
         _requiredLabel("Landholding (area in hectare)"),
         const SizedBox(height: 8),
 
@@ -206,9 +181,6 @@ class _AgricultureAssistanceWidgetState
 
         const SizedBox(height: 20),
 
-        // ==========================================================
-        // 2️⃣ Assistance Type Selection
-        // ==========================================================
         _requiredLabel("Assistance Type"),
         const SizedBox(height: 10),
 
@@ -259,9 +231,6 @@ class _AgricultureAssistanceWidgetState
 
         const SizedBox(height: 20),
 
-        // ==========================================================
-        // 3️⃣ SUBTYPE1 LANDLOSS SECTION
-        // ==========================================================
         if (selectedType == "SUBTYPE1") ...[
           const Divider(),
           const SizedBox(height: 12),
@@ -344,9 +313,6 @@ class _AgricultureAssistanceWidgetState
             ),
         ],
 
-        // ==========================================================
-        // 4️⃣ SUBTYPE2 INPUT SUBSIDY SECTION
-        // ==========================================================
         if (selectedType == "SUBTYPE2") ...[
           const Divider(),
           const SizedBox(height: 12),
@@ -477,8 +443,6 @@ class _AgricultureAssistanceWidgetState
     );
   }
 
-  // =====================================================
-  // UI HELPERS
   InputDecoration _input(String hint) => InputDecoration(
         hintText: hint,
         filled: true,

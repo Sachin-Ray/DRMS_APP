@@ -68,9 +68,6 @@ class _AddAnimalHusbandryBeneficiaryDialogState
     super.dispose();
   }
 
-  // ======================================================
-  // CONFIRM DIALOG
-  // ======================================================
   Future<bool?> _showConfirmDialog() {
     return showDialog<bool>(
       context: context,
@@ -95,9 +92,6 @@ class _AddAnimalHusbandryBeneficiaryDialogState
     );
   }
 
-  // ======================================================
-  // ERROR POPUP
-  // ======================================================
   void _showError(String msg) {
     showDialog(
       context: context,
@@ -114,16 +108,13 @@ class _AddAnimalHusbandryBeneficiaryDialogState
     );
   }
 
-  // ======================================================
-  // SUBMIT BENEFICIARY
-  // ======================================================
   Future<void> _submitBeneficiary() async {
     if (!_formKey.currentState!.validate()) {
       setState(() => b1 = true);
       return;
     }
 
-    // ✅ Ensure Norms Selected
+    // Ensure Norms Selected
     if (assistance.normCodes.isEmpty) {
       _showError("Please select at least one assistance type.");
       return;
@@ -134,7 +125,7 @@ class _AddAnimalHusbandryBeneficiaryDialogState
 
     setState(() => isSubmitting = true);
 
-    // ✅ Correct Payload Format
+    // Correct Payload Format
     final payload = {
       "beneficiaryName": beneficiary.name,
       "ageCategory": beneficiary.ageCategory,
@@ -145,14 +136,14 @@ class _AddAnimalHusbandryBeneficiaryDialogState
       // FIR
       "firNo": widget.firNo,
 
-      // ✅ Correct Assistance Head
+      // Correct Assistance Head
       "assistanceHead": "AH-LS",
 
-      // ✅ Multi Norm Select
+      // Multi Norm Select
       "normSelect": assistance.normCodes,
       "animalType": assistance.animalType,
 
-      // ✅ Animal Counts
+      // Animal Counts
       "noOfLargeAnimal": assistance.noOfLargeAnimal,
       "noOfSmallAnimal": assistance.noOfSmallAnimal,
       "noOfPoultry": assistance.noOfPoultry,
@@ -189,7 +180,7 @@ class _AddAnimalHusbandryBeneficiaryDialogState
         b5 = true;
       });
 
-      // ✅ Scroll to Upload Section
+      // Scroll to Upload Section
       await Future.delayed(const Duration(milliseconds: 300));
 
       _scrollController.animateTo(
@@ -202,9 +193,6 @@ class _AddAnimalHusbandryBeneficiaryDialogState
     }
   }
 
-  // ======================================================
-  // PICK FILE
-  // ======================================================
   Future<void> _pickFile(int docCode) async {
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -218,16 +206,10 @@ class _AddAnimalHusbandryBeneficiaryDialogState
     }
   }
 
-  // ======================================================
-  // CHECK ALL DOCS UPLOADED
-  // ======================================================
   bool get allDocsUploaded {
     return requiredDocs.every((doc) => uploadedDocs[doc.documentCode] != null);
   }
 
-  // ======================================================
-  // UPLOAD ENCLOSURES
-  // ======================================================
   Future<void> _uploadEnclosures() async {
     if (!allDocsUploaded) {
       _showError("All enclosures are mandatory. Please upload all files.");
@@ -272,9 +254,6 @@ class _AddAnimalHusbandryBeneficiaryDialogState
     }
   }
 
-  // ======================================================
-  // UI BUILD
-  // ======================================================
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -287,7 +266,6 @@ class _AddAnimalHusbandryBeneficiaryDialogState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ================= HEADER =================
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: const BoxDecoration(
@@ -314,7 +292,6 @@ class _AddAnimalHusbandryBeneficiaryDialogState
                 ),
               ),
 
-              // ================= BODY =================
               Flexible(
                 child: SingleChildScrollView(
                   controller: _scrollController,
@@ -450,7 +427,6 @@ class _AddAnimalHusbandryBeneficiaryDialogState
                 ),
               ),
 
-              // ================= FOOTER =================
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: SizedBox(

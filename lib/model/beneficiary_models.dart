@@ -64,7 +64,7 @@ double? landHoldingArea;
         // Single type
         "assistanceType": assistanceType,
 
-        // ✅ Multi type (Fishery)
+        // Multi type (Fishery)
         "assistanceTypeList": assistanceTypeList,
 
         "landHolding": landHolding,

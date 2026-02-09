@@ -69,9 +69,6 @@ class _AddHousingDamageBeneficiaryDialogState
     super.dispose();
   }
 
-  // ======================================================
-  // CONFIRMATION POPUP
-  // ======================================================
   Future<bool?> _showConfirmDialog() {
     return showDialog<bool>(
       context: context,
@@ -95,10 +92,6 @@ class _AddHousingDamageBeneficiaryDialogState
       ),
     );
   }
-
-  // ======================================================
-  // ERROR DIALOG
-  // ======================================================
   Future<void> _showError(String msg) {
     return showDialog(
       context: context,
@@ -115,9 +108,6 @@ class _AddHousingDamageBeneficiaryDialogState
     );
   }
 
-  // ======================================================
-  // SUBMIT HOUSING BENEFICIARY
-  // ======================================================
   Future<void> _submitHousingBeneficiary() async {
     if (!_formKey.currentState!.validate()) {
       setState(() => b1 = true);
@@ -139,9 +129,6 @@ class _AddHousingDamageBeneficiaryDialogState
 
     setState(() => isSubmitting = true);
 
-    // ======================================================
-    // ✅ HOUSING PAYLOAD (Backend Format)
-    // ======================================================
     final payload = {
       "beneficiaryName": beneficiary.name,
       "ageCategory": beneficiary.ageCategory,
@@ -157,13 +144,13 @@ class _AddHousingDamageBeneficiaryDialogState
       "remarks": assistance.remarks,
       "firNo": widget.firNo,
 
-      // ✅ Housing Assistance Head
+      // Housing Assistance Head
       "assistanceHead": "AH-HU",
 
-      // ✅ Multi Norm Select
+      // Multi Norm Select
       "normSelect": assistance.normCodes,
 
-      // ✅ Extra Housing Field (Pucca/Kutcha)
+      //  Extra Housing Field (Pucca/Kutcha)
       "IspuccaOrKutcha": assistance.isPuccaOrKutcha,
     };
 

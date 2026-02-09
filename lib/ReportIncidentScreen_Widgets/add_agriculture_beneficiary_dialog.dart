@@ -41,14 +41,10 @@ class _AddAgricultureBeneficiaryDialogState
   final _formKey = GlobalKey<FormState>();
   final ScrollController _scrollController = ScrollController();
 
-  // ======================================================
-  // MODELS
-  // ======================================================
   final BeneficiaryDetails beneficiary = BeneficiaryDetails();
   final AssistanceDetails assistance = AssistanceDetails();
   final BankDetails bank = BankDetails();
 
-  // Accordion Expand States
   bool b1 = true;
   bool b2 = true;
   bool b3 = true;
@@ -76,9 +72,6 @@ class _AddAgricultureBeneficiaryDialogState
     super.dispose();
   }
 
-  // ======================================================
-  // CONFIRMATION DIALOG
-  // ======================================================
   Future<bool?> _showConfirmDialog() {
     return showDialog<bool>(
       context: context,
@@ -104,9 +97,6 @@ class _AddAgricultureBeneficiaryDialogState
     );
   }
 
-  // ======================================================
-  // ERROR POPUP
-  // ======================================================
   Future<void> _showErrorDialog(String msg) {
     return showDialog(
       context: context,
@@ -123,9 +113,6 @@ class _AddAgricultureBeneficiaryDialogState
     );
   }
 
-  // ======================================================
-  // SUBMIT AGRICULTURE BENEFICIARY
-  // ======================================================
   Future<void> _submitAgricultureBeneficiary() async {
     if (!_formKey.currentState!.validate()) {
       setState(() => b1 = true);
@@ -147,9 +134,6 @@ class _AddAgricultureBeneficiaryDialogState
 
     setState(() => isSubmitting = true);
 
-    // ======================================================
-    // ✅ PAYLOAD EXACTLY AS REQUIRED
-    // ======================================================
     final payload = {
       "beneficiaryName": beneficiary.name,
       "ageCategory": beneficiary.ageCategory,
@@ -165,7 +149,7 @@ class _AddAgricultureBeneficiaryDialogState
       "remarks": assistance.remarks,
       "firNo": widget.firNo,
 
-      // ✅ Assistance Head
+      // Assistance Head
       "assistanceHead": "AH-AG",
 
       "normSelect": assistance.normCodes,
@@ -318,7 +302,6 @@ class _AddAgricultureBeneficiaryDialogState
                 ),
               ),
 
-              // ================= BODY =================
               Flexible(
                 child: SingleChildScrollView(
                   controller: _scrollController,
