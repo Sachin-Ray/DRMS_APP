@@ -20,7 +20,7 @@ class APIService {
       "https://fisheries.meghalaya.gov.in/fishFarmerPortal/";
   static const String cropsapURL =
       "https://cropsap.megfarmer.gov.in/api/getForecast/";
-  // static const String drmsURL = "http://10.179.2.219:8083/drms/v-1/app/api/";
+  // static const String drmsURL = "https://relief.megrevenuedm.gov.in/stagingapi/drms/v-1/app/api/";
   static const String drmsURL =
       "https://relief.megrevenuedm.gov.in/liveapi/drms/v-1/app/api/";
 

@@ -167,17 +167,29 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
   }
 
   Future<void> _pickFile(int documentCode) async {
-    final picked = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
-    );
+  final picked = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
+  );
 
-    if (picked != null && picked.files.single.path != null) {
-      setState(() {
-        uploadedDocs[documentCode] = File(picked.files.single.path!);
-      });
+  if (picked != null && picked.files.single.path != null) {
+    final file = File(picked.files.single.path!);
+
+    const maxSize = 2 * 1024 * 1024;
+
+    final fileSize = await file.length();
+
+    if (fileSize > maxSize) {
+      _showErrorDialog("File size must not exceed 2 MB.");
+      return;
     }
+
+    setState(() {
+      uploadedDocs[documentCode] = file;
+    });
   }
+}
+
 
   bool get allDocsUploaded {
     return requiredDocs.every((doc) => uploadedDocs[doc.documentCode] != null);
@@ -199,6 +211,12 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
       final file = uploadedDocs[doc.documentCode]!;
       final bytes = await file.readAsBytes();
       final mimeType = lookupMimeType(file.path) ?? "application/octet-stream";
+
+      if (file.lengthSync() > 2 * 1024 * 1024) {
+        _showErrorDialog("Each file must be less than 2 MB.");
+        return;
+      }
+
 
       docsPayload.add({
         "filename": doc.documentName,
@@ -272,38 +290,6 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      // ✅ SUCCESS BANNER
-                      if (beneficiarySaved)
-                        Container(
-                          width: double.infinity,
-                          margin: const EdgeInsets.only(bottom: 14),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.green.shade300),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                                size: 22,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  "Beneficiary Saved Successfully! Upload all mandatory enclosures below.",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                    color: Colors.green.shade800,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
 
                       // FORM SECTION
                       AbsorbPointer(
@@ -350,6 +336,39 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                         ),
                       ),
 
+                       // SUCCESS BANNER
+                      if (beneficiarySaved)
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 14),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.green.shade300),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 22,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  "Beneficiary Saved Successfully! Upload all mandatory enclosures below.",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    color: Colors.green.shade800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
                       if (showRequiredDocs)
                         AccordionSection(
                           title: "Upload Enclosures (Mandatory)",
@@ -363,7 +382,7 @@ class _AddBeneficiaryDialogState extends State<AddBeneficiaryDialog> {
                                 return Card(
                                   elevation: 1,
                                   child: ListTile(
-                                    title: Text("${doc.documentName} *"),
+                                    title: Text("${doc.documentName} * (Max 2 MB)"),
                                     subtitle: file == null
                                         ? const Text("No file selected")
                                         : Text(

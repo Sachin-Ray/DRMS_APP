@@ -23,6 +23,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isPasswordVisible = false;
   final String baseUrl =
       'https://relief.megrevenuedm.gov.in/liveapi/drms/v-1/app/api';
+  // final String baseUrl =
+  //     'https://relief.megrevenuedm.gov.in/stagingapi/drms/v-1/app/api';
 
   @override
   void initState() {
@@ -168,32 +170,32 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Column(
                     children: [
-                      Container(
-                        height: 95,
-                        width: 95,
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.12),
-                              blurRadius: 14,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Image.asset(
-                          "assets/logo/meghalaya_logo.png",
-                          fit: BoxFit.contain,
-                        ),
-                      ),
+                      // Container(
+                      //   height: 95,
+                      //   width: 95,
+                      //   padding: const EdgeInsets.all(10),
+                      //   decoration: BoxDecoration(
+                      //     color: Colors.white,
+                      //     shape: BoxShape.circle,
+                      //     boxShadow: [
+                      //       BoxShadow(
+                      //         color: Colors.black.withOpacity(0.12),
+                      //         blurRadius: 14,
+                      //         offset: const Offset(0, 4),
+                      //       ),
+                      //     ],
+                      //   ),
+                      //   child: Image.asset(
+                      //     "assets/logo/meghalaya_logo.png",
+                      //     fit: BoxFit.contain,
+                      //   ),
+                      // ),
 
                       const SizedBox(height: 14),
 
                       SvgPicture.asset(
                         "assets/disaster_relief.svg",
-                        height: 90,
+                        height: 100,
                       ),
                     ],
                   ),

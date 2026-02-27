@@ -1,5 +1,5 @@
 import 'package:drms/screens/about_screen.dart';
-import 'package:drms/screens/contact_officials_creen.dart';
+import 'package:drms/screens/contact_officials_screen.dart';
 import 'package:drms/screens/home_screen.dart';
 import 'package:drms/screens/pending_approvals.dart';
 // import 'package:drms/screens/profile_screen.dart';

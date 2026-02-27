@@ -165,6 +165,15 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
   Future<void> _pickImages() async {
     if (isPicking) return;
 
+    if (selectedImages.length >= 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("You can upload a maximum of 5 photos only."),
+        ),
+      );
+      return;
+    }
+
     setState(() => isPicking = true);
 
     try {
@@ -172,7 +181,7 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
         maxWidth: 1200,
         maxHeight: 1200,
         imageQuality: 85,
-        limit: 5 - selectedImages.length,
+        limit: 6 - selectedImages.length,
       );
 
       if (xFiles != null && xFiles.isNotEmpty) {
@@ -184,9 +193,11 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Failed to pick images")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Unable to pick images. Please try again."),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => isPicking = false);
@@ -776,6 +787,7 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
                         SizedBox(height: 8),
                         TextFormField(
                           controller: populationController,
+                          maxLength: 5,
                           keyboardType: TextInputType.number,
                           decoration: _inputDecoration(
                             "Enter number of people",
@@ -1396,8 +1408,10 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
               child: TextFormField(
                 controller: controller,
                 keyboardType: TextInputType.number,
+                maxLength: 5,
                 decoration: InputDecoration(
                   hintText: "Count",
+                  counterText: "",
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 12,
@@ -1427,6 +1441,7 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
       ),
+      counterText: "",
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: Color(0xffE5E7EB)),
@@ -1506,6 +1521,7 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
                   flex: 2,
                   child: TextFormField(
                     controller: row.totalController,
+                    maxLength: 5,
                     keyboardType: TextInputType.number,
                     decoration: _inputDecoration("Total No."),
                     validator: (v) =>
